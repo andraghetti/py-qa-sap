@@ -1,0 +1,51 @@
+# https://setuptools.pypa.io/en/latest/userguide/pyproject_config.html
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "qasap"
+description = ""
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Lorenzo Andraghetti", email = "lorenzo@andraghetti.dev" }]
+maintainers = [
+  { name = "Lorenzo Andraghetti", email = "lorenzo@andraghetti.dev" },
+]
+classifiers = ["Programming Language :: Python"]
+dynamic = ["version"]
+
+dependencies = ["click", "rich-click", "streamlit", "openpyxl"]
+
+[project.optional-dependencies]
+dev = [
+  "black==23.1.0",
+  "isort",
+  "pre-commit",
+  "build",
+  "pywebview",
+  "pyinstaller",
+  "watchdog",
+]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["qasap*"]
+
+[tool.setuptools.dynamic]
+version = { attr = "qasap._version.__version__" }
+
+[project.scripts]
+qasap = "qasap.cli.cli:qasap"
+
+[tool.black]
+line-length = 100
+include = '\.pyi?$'
+exclude = '''
+  /(
+  | \.git
+  )/
+  '''

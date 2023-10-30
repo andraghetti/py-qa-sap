@@ -1,0 +1,2 @@
+recursive-include src/qasap/streamlit/static *
+include src/qasap/streamlit/style.css
