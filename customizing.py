@@ -45,6 +45,28 @@ ebs_mt940_dict = {
 
 }
 
+migration_file_modes = ['Fixed asset']
+
+migration_file_main_sheet = ['Master Details']
+
+migration_file_secondary_sheets = ['Posting Information', 'Time-Dependent Data', 'Depreciation Areas', 'Cumulative Values'] #a list of sheets for which is mandatory to have all the key value of the main sheet
+
+migration_file_space_forbidden_fields = ['BUKRS', 'ANLN1', 'ANLN2', 'ANLKL', 'GSBER', 'KOSTL', 'WERKS', 'AFABE', 'ASSETTRTYP'] #a list of technical name fields for which is forbidden to have spaces
+
+migration_file_2_max_digits = ['AFABE', 'WITHT', 'WT_WITHCD']
+
+migration_file_3_max_digits = ['MEINS', 'ASSETTRTYP', 'COUNTRY', 'REGION']
+
+migration_file_4_max_digits = ['BUKRS', 'WERKS', 'GSBER', 'EVALGROUP1', 'EVALGROUP2', 'EVALGROUP3', 'EVALGROUP4', 'AFASL', 'BU_GROUP', 'KTOKD', 'FRGRP', 'ZTERM', 'MAHNA']
+
+migration_file_5_max_digits = ['CURRENCY', 'HBKID']
+
+migration_file_7_max_digits = ['BP_ROLE']
+
+migration_file_8_max_digits = ['ANLKL', 'EVALGROUP5']
+
+migration_file_10_max_digits = ['KOSTL', 'VENDOR_NO', 'LIFNR', 'KUNNR', 'AKONT', 'FDGRV', 'ZWELS_01', 'ZWELS_02', 'ZWELS_03', 'ZWELS_04']
+
 class Root ():
     def __init__(
         self,
@@ -62,7 +84,7 @@ class Root ():
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
 
-        icon_path = r'C:\\Users\\scham\\OneDrive\\Desktop\\SAP HELP\\Icon\\communication_assistance_help_support_service_information_icon_230472.ico'
+        icon_path = r'C:\\Users\\scham\\OneDrive\\Desktop\\SAP HELPER\\Icon\\communication_assistance_help_support_service_information_icon_230472.ico'
         self.root.iconbitmap(icon_path)
 
         self.root.state('zoomed')
@@ -75,13 +97,14 @@ class Frame ():
     def __init__(
         self,
         root: None,
-        pack_or_grid:str = 'G',
-        left_or_right:str = 'O',
+        pack_or_grid: str = 'G',
+        left_or_right: str = 'O',
         background: str = '#F0F8FF',
-        column:int = 0,
-        row:int = 0,
-        sticky:str = '',
-        col_span:int = 1
+        column: int = 0,
+        row: int = 0,
+        sticky: str = '',
+        col_span: int = 1,
+        row_span: int = 1
     ):
         self.frame = tkinter.Frame(root, background = background)
         if pack_or_grid.upper() == 'P':
@@ -92,7 +115,7 @@ class Frame ():
             else:
                 self.frame.pack(fill = tkinter.BOTH)
         else:
-            self.frame.grid(column = column, row = row, sticky = sticky, columnspan = col_span)
+            self.frame.grid(column = column, row = row, sticky = sticky, columnspan = col_span, rowspan = row_span)
             self.frame.columnconfigure(0, weight=1)  # Ensure column 0 expands
 
 class Button ():
@@ -281,13 +304,13 @@ class RadioButton_2 ():
         self.label_text = label_text
         self.text_1 = text_1
         self.text_2 = text_2
-        self.label = Label (frame, text = label_text, row = row, column = column, dimension = 10)
+        self.label = Label (frame, text = label_text, row = row, column = column, dimension = dimension + 2)
         self.label.label.config(foreground='#191970')
         self.variable = tkinter.StringVar()
         self.radiobutton_1 = tkinter.Radiobutton (frame, text = text_1, variable = self.variable, value = text_1, command = command, font = ('Calibri', dimension), background = '#F0F8FF')
-        self.radiobutton_1.grid(row = row + 1, column = column)
+        self.radiobutton_1.grid(row = row + 1, column = column, sticky = tkinter.W)
         self.radiobutton_2 = tkinter.Radiobutton (frame, text = text_2, variable = self.variable, value = text_2, command = command, font = ('Calibri', dimension), background = '#F0F8FF')
-        self.radiobutton_2.grid(row = row + 2, column = column)
+        self.radiobutton_2.grid(row = row + 2, column = column, sticky = tkinter.W)
 
 class RadioButton_3 (RadioButton_2):
     def __init__ (

@@ -116,7 +116,7 @@ class MainRoot:
 
         customizing.Label (
              frame = self.frame,
-             text = 'SAP HELP',
+             text = 'SAP HELPER',
              dimension = 40,
              sticky = tkinter.NS,
              foreground = '#229F22',
@@ -431,11 +431,29 @@ class MigrationFile:
                 self.go_back.config(command = lambda: go_back('fields'))
 
         def sheet_checkboxes ():
+
+            def mode_command (on_off : str):
+                if on_off == 'on':
+                    for c in range(maximum_sheet):
+                        for d in rows:
+                            if self.sheet_names[c] in d:
+                                if '(mandatory)' in d:
+                                    sheet_list[c].sheet.variable.set(1)
+                                    sheet_list[c].sheet.checkbox.config (state = 'disabled')
+                else:
+                    for c in range(maximum_sheet):
+                        for d in rows:
+                            if self.sheet_names[c] in d:
+                                if '(mandatory)' in d:
+                                    sheet_list[c].sheet.checkbox.config (state = 'normal')
+
             migration_forget(sheet_list, 'Yes')
                 
             xl = pd.ExcelFile(self.entry_path.entry.get())
 
             df = pd.read_excel(self.entry_path.entry.get(), 'Field List')
+
+            column_list = df.columns.tolist()
 
             all_rows = df.iloc[:, 1].tolist()
             rows = []
@@ -462,13 +480,21 @@ class MigrationFile:
                         else:
                             sheet_list[c].sheet.variable.set(0)
             
+            for e in customizing.migration_file_modes:
+                if e in column_list[0]:
+                    self.mode.radiobutton_1.config(command = lambda: mode_command('off'))
+                    self.mode.radiobutton_2.config(text = e, value = e, command = lambda: mode_command('on'))
+                    self.mode_frame.frame.grid(column = 1, row = 1, rowspan = 100, columnspan = 5, sticky = tkinter.NW, padx = 50)
+                    
+            self.mode.variable.set('Generic')
+            
             self.go_ahead.config(state = 'normal')
             self.go_back.config(command = lambda: go_back('sheets'))
             self.entry_path.entry.config(state = 'disabled')
 
         def migration_fields ():
             migration_forget(sheet_list, 'No')
-
+            self.mode_frame.frame.grid_forget()
             self.sheet_names_list = []
             
             for b in range(len(sheet_list)):
@@ -585,6 +611,7 @@ class MigrationFile:
             self.go_ahead.config(command = migration_analysis)
 
         def migration_analysis ():
+            mode_counter = 0
             for a in self.sheet_names_list:
                 key_field_list_1 =[]
                 key_field_list_2 =[]
@@ -614,23 +641,23 @@ class MigrationFile:
                 column_dec = []
                 for col_form in range(len(column_details)):
                     if not isinstance(column_details[col_form], str):
-                        tkinter.messagebox.showerror(title="ERROR", message=f'Wrong Format in Sheet: {a[0]}, column: {column_names[col_form]}, row: 6')
+                        tkinter.messagebox.showerror(title="ERROR", message=f'Wrong Format in Sheet: {a[0]}, column: {column_names[col_form].replace("*", "").replace("+", "")}, row: 6')
                         return
                     column_formats.append(column_details[col_form].split(';')[3]) # column formats
                 for col_numb in range(len(column_details)):
-                    if column_tech_names[col_numb] == 'AFABE' or column_tech_names[col_numb] == 'WITHT' or column_tech_names[col_numb] == 'WT_WITHCD':
+                    if column_tech_names[col_numb] in customizing.migration_file_2_max_digits:
                         column_int.append('2')
-                    elif column_tech_names[col_numb] == 'MEINS' or column_tech_names[col_numb] == 'ASSETTRTYP' or column_tech_names[col_numb] == 'COUNTRY' or column_tech_names[col_numb] == 'REGION':
+                    elif column_tech_names[col_numb] in customizing.migration_file_3_max_digits:
                         column_int.append('3')
-                    elif column_tech_names[col_numb] == 'BUKRS' or column_tech_names[col_numb] == 'WERKS' or column_tech_names[col_numb] == 'GSBER' or column_tech_names[col_numb] == 'EVALGROUP1' or column_tech_names[col_numb] == 'EVALGROUP2' or column_tech_names[col_numb] == 'EVALGROUP3' or column_tech_names[col_numb] == 'EVALGROUP4' or column_tech_names[col_numb] == 'AFASL' or column_tech_names[col_numb] == 'BU_GROUP' or column_tech_names[col_numb] == 'KTOKD' or column_tech_names[col_numb] == 'FRGRP' or column_tech_names[col_numb] == 'ZTERM' or column_tech_names[col_numb] == 'MAHNA':
+                    elif column_tech_names[col_numb] in customizing.migration_file_4_max_digits:
                         column_int.append('4')
-                    elif column_tech_names[col_numb] == 'CURRENCY' or column_tech_names[col_numb] == 'HBKID':
+                    elif column_tech_names[col_numb] in customizing.migration_file_5_max_digits:
                         column_int.append('5')
-                    elif column_tech_names[col_numb] == 'BP_ROLE':
+                    elif column_tech_names[col_numb] in customizing.migration_file_7_max_digits:
                         column_int.append('7')
-                    elif column_tech_names[col_numb] == 'ANLKL' or column_tech_names[col_numb] == 'EVALGROUP5':
+                    elif column_tech_names[col_numb] in customizing.migration_file_8_max_digits:
                         column_int.append('8')
-                    elif column_tech_names[col_numb] == 'KOSTL' or column_tech_names[col_numb] == 'VENDOR_NO' or column_tech_names[col_numb] == 'LIFNR' or column_tech_names[col_numb] == 'KUNNR' or column_tech_names[col_numb] == 'AKONT' or column_tech_names[col_numb] == 'FDGRV' or column_tech_names[col_numb] == 'ZWELS_01' or column_tech_names[col_numb] == 'ZWELS_02' or column_tech_names[col_numb] == 'ZWELS_03' or column_tech_names[col_numb] == 'ZWELS_04':
+                    elif column_tech_names[col_numb] in customizing.migration_file_10_max_digits:
                         column_int.append('10')
                     else:                    
                         column_int.append(column_details[col_numb].split(';')[1]) # column max integer digits
@@ -653,32 +680,34 @@ class MigrationFile:
                         if row >= 7 and str(rows[row]) != 'nan':
                             if column_formats[b] == 'D':
                                 if not isinstance(rows[row], datetime): # It recognizes both the SAP custom date format and the Excel date format
-                                    self.error_list.append((a[0], 'E003', row + 2 , sheet_list[a[1]].field_list[b].label_text, 'This date is in a wrong format'))
+                                    self.error_list.append((a[0], 'E003', row + 2 , sheet_list[a[1]].field_list[b].label_text.replace("*", "").replace("+", ""), 'This date is in a wrong format'))
 
                             elif column_formats[b] == 'N':
                                 if (not isinstance(rows[row], int) or rows[row] > 10**int(column_int[b])):
-                                    self.error_list.append((a[0], 'E004', row + 2 , sheet_list[a[1]].field_list[b].label_text, 'This number is in a wrong format'))
+                                    self.error_list.append((a[0], 'E004', row + 2 , sheet_list[a[1]].field_list[b].label_text.replace("*", "").replace("+", ""), 'This number is in a wrong format'))
 
                             elif column_formats[b] == 'P':
                                 if not isinstance(rows[row], int) and not isinstance(rows[row], float):
-                                    self.error_list.append((a[0], 'E004', row + 2 , sheet_list[a[1]].field_list[b].label_text, 'This number is in a wrong format'))
+                                    self.error_list.append((a[0], 'E004', row + 2 , sheet_list[a[1]].field_list[b].label_text.replace("*", "").replace("+", ""), 'This number is in a wrong format'))
                                 elif isinstance(rows[row], int):
                                     if rows[row] > 10**int(column_int[b]):
-                                        self.error_list.append((a[0], 'E005', row + 2 , sheet_list[a[1]].field_list[b].label_text, 'The maximum length of the field is exceeded'))
+                                        self.error_list.append((a[0], 'E005', row + 2 , sheet_list[a[1]].field_list[b].label_text.replace("*", "").replace("+", ""), 'The maximum length of the field is exceeded'))
                                 else:
                                     if len(str(rows[row]).split('.')[0]) > int(column_int[b]) or len(str(rows[row]).split('.')[1]) > int(column_dec[b]):
-                                        self.error_list.append((a[0], 'E005', row + 2 , sheet_list[a[1]].field_list[b].label_text, 'The maximum length of the field is exceeded'))
+                                        self.error_list.append((a[0], 'E005', row + 2 , sheet_list[a[1]].field_list[b].label_text.replace("*", "").replace("+", ""), 'The maximum length of the field is exceeded'))
 
                             else:
                                 if len(str(rows[row])) > int(column_int[b]):
-                                    self.error_list.append((a[0], 'E005', row + 2 , sheet_list[a[1]].field_list[b].label_text, 'The maximum length of the field is exceeded'))
+                                    self.error_list.append((a[0], 'E005', row + 2 , sheet_list[a[1]].field_list[b].label_text.replace("*", "").replace("+", ""), 'The maximum length of the field is exceeded'))
+                                if rows[3] in customizing.migration_file_space_forbidden_fields and ' ' in str(rows[row]):
+                                    self.error_list.append((a[0], 'E010', row + 2 , sheet_list[a[1]].field_list[b].label_text.replace("*", "").replace("+", ""), 'The space in this field is forbidden'))
 
                             if b < key_counter:
                                 key_field_list_1.append(rows[row])
 
                             if not all(element == '' for element in input_content):
                                 if str(rows[row]) not in input_content:
-                                    self.error_list.append((a[0], 'E007', row + 2 , sheet_list[a[1]].field_list[b].label_text, 'Field filled with a value not foreseen among input fields'))                         
+                                    self.error_list.append((a[0], 'E007', row + 2 , sheet_list[a[1]].field_list[b].label_text.replace("*", "").replace("+", ""), 'Field filled with a value not foreseen among input fields'))                         
 
                 for c in range(int(len(key_field_list_1)/key_counter)):
                     counter = 0
@@ -689,6 +718,25 @@ class MigrationFile:
                         self.error_list.append((a[0], 'E006', c + 9 , '', 'These key field values are already present in the sheet'))
                     key_field_list_3.append(key_field_list_2)
                     key_field_list_2 = []
+                
+                #this check is done only if a specific mode is chosen
+                main_key_field = []
+                main_key_fields_list = []
+                if self.mode.variable.get() in customizing.migration_file_modes:
+                    if a[0] in customizing.migration_file_main_sheet:
+                        self.mode_key_fields = key_field_list_3
+                        mode_counter = len(key_field_list_3[0])
+                    else:
+                        for k in range(len(key_field_list_3)):
+                            main_key_field = key_field_list_3[k][:mode_counter]
+                            if main_key_field not in self.mode_key_fields:
+                                self.error_list.append((a[0], 'E008', k + 9 , '', 'These key field values are not present in the main sheet'))                         
+                            main_key_fields_list.append(main_key_field)
+
+                        if a[0] in customizing.migration_file_secondary_sheets:
+                            for n in range(len(self.mode_key_fields)):
+                                if self.mode_key_fields[n] not in main_key_fields_list:
+                                    self.error_list.append((a[0], 'E009', '' , '', f'The {self.mode_key_fields[n]} key field values are not in this sheet'))                         
 
 
             for widget in frame.winfo_children():
@@ -713,6 +761,8 @@ class MigrationFile:
 
         self.sheet_names_list = []
 
+        self.mode_key_fields = []
+
         self.present_fields = []
 
         self.error_list = []
@@ -724,7 +774,7 @@ class MigrationFile:
             entry_pady = 10
             )
         
-        image_path_back = 'C:\\Users\\scham\\OneDrive\\Desktop\\SAP HELP\\Icon\\above_thearrow_1550 (1).png'
+        image_path_back = 'C:\\Users\\scham\\OneDrive\\Desktop\\SAP HELPER\\Icon\\above_thearrow_1550 (1).png'
         self.button_icon_back = tkinter.PhotoImage(file=image_path_back)
 
         # Create a button with the resized image
@@ -733,7 +783,7 @@ class MigrationFile:
 
         #button to make fields appear
         # Load an image for the button icon
-        image_path = 'C:\\Users\\scham\\OneDrive\\Desktop\\SAP HELP\\Icon\\Next_arrow_1559 (1).png'
+        image_path = 'C:\\Users\\scham\\OneDrive\\Desktop\\SAP HELPER\\Icon\\Next_arrow_1559 (1).png'
         self.button_icon = tkinter.PhotoImage(file=image_path)
 
         # Create a button with the resized image
@@ -800,11 +850,27 @@ class MigrationFile:
         self.upload_input_entry.entry.grid_forget()
         self.upload_input_entry.label.label.grid_forget()
 
+        self.mode_frame = customizing.Frame (
+            root = self.frame,
+            column = 1,
+            row = 1,
+            row_span = 100
+        )
+
+        self.mode = customizing.RadioButton_2 (
+            frame = self.mode_frame.frame,
+            label_text = 'Analysis Mode',
+            text_1 = 'Generic',
+            dimension = 15
+        )
+        self.mode_frame.frame.grid_forget()
+        
+
         sheet_list = [self.sheet_1, self.sheet_2, self.sheet_3, self.sheet_4, self.sheet_5, self.sheet_6, self.sheet_7, self.sheet_8, self.sheet_9, self.sheet_10, self.sheet_11, self.sheet_12, self.sheet_13, self.sheet_14, self.sheet_15, self.sheet_16, self.sheet_17, self.sheet_18, self.sheet_19, self.sheet_20, self.sheet_21, self.sheet_22, self.sheet_23, self.sheet_24, self.sheet_25, self.sheet_26, self.sheet_27, self.sheet_28, self.sheet_29, self.sheet_30]
         
         migration_forget (sheet_list, 'Yes')
        
-mainroot = customizing.Root (root_title = 'SAP HELP')
+mainroot = customizing.Root (root_title = 'SAP HELPER')
 
 mainframe = customizing.Frame (
             root = mainroot.root,
