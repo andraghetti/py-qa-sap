@@ -434,6 +434,10 @@ class MigrationFile:
 
             def mode_command (on_off : str):
                 if on_off == 'on':
+                    if not any(element in self.sheet_names for element in customizing.migration_file_main_sheet):
+                        tkinter.messagebox.showerror(title="ERROR", message='The main sheet for this template is missing in the Excel file. Choose "Generic" or check the uploaded file')
+                        self.mode.variable.set('Generic')
+                        return
                     for c in range(maximum_sheet):
                         for d in rows:
                             if self.sheet_names[c] in d:
@@ -506,10 +510,12 @@ class MigrationFile:
                     df = pd.read_excel(self.entry_path.entry.get(), self.sheet_names[b])
 
                     # Get the column names
+                    column_tech_names = df.iloc[3, :].tolist()
                     column_list = df.iloc[6, :].tolist()
                     column_names = []
-                    for column in column_list:
-                        column_names.append(column.split('\n')[0])
+                    for column in range(len(column_list)):
+                        if self.mode.variable.get() != 'Customer' or (column_tech_names[column] not in customizing.mf_customer_general_data and column_tech_names[column] not in customizing.mf_customer_company_data):
+                            column_names.append(column_list[column].split('\n')[0])
 
                     maximum_field = len(column_names)
                     if len(column_names) > 50:
@@ -552,12 +558,12 @@ class MigrationFile:
                 sheet_present_fields = []
                 for j in self.present_fields:
                     if j[0] == a[0]:
-                        sheet_present_fields.append((j[1], j[2]))
+                        sheet_present_fields.append((j[1], j[3]))
                 for b in sheet_present_fields:
                     sheet_list[a[1]].field_list[b[1]].text_input.delete(1.0, tkinter.END)
 
                     for d in range(len(column_list)):
-                        if column_list[d] == b[0].replace("*", "").replace("+", ""):
+                        if column_list[d].replace("*", "").replace("+", "") == b[0].replace("*", "").replace("+", ""):
                             rows = df.iloc[:, d].tolist()
                             for row in rows:
                                 if str(row) != 'nan':
@@ -573,15 +579,35 @@ class MigrationFile:
                 df = pd.read_excel(self.entry_path.entry.get(), a[0])
 
                 # Get the column names
+                column_tech_names = df.iloc[3, :].tolist()
                 column_list = df.iloc[6, :].tolist()
                 column_names = []
-                for column in column_list:
-                    column_names.append(column.split('\n')[0])
+                for column in range(len(column_list)):
+                    if self.mode.variable.get() != 'Customer' or (column_tech_names[column] not in customizing.mf_customer_general_data and column_tech_names[column] not in customizing.mf_customer_company_data):
+                        column_names.append((column_list[column].split('\n')[0], column))
+
+                maximum_field = len(column_names)
+                if len(column_names) > 50:
+                    maximum_field = 50
                 
-                for b in range(len(column_names)):
+                if self.mode.variable.get() == 'Customer' and a[0] == 'General Data' or a[0] == 'Company Data':
+                    for n in range(len(column_tech_names)):
+                        all_rows = df.iloc[:, n].tolist()
+                        if column_tech_names[n] in customizing.mf_customer_general_data or column_tech_names[n] in customizing.mf_customer_company_data:
+                            for row in range(len(all_rows)):
+                                if row >= 7:
+                                    if str(all_rows[row]) != 'nan' or type(all_rows[row]) != float:
+                                        self.error_list.append((a[0], 'W001', row + 2 , column_list[n].split('\n')[0].replace("*", "").replace("+", ""), 'This field is not blank, but is in a column not considered in this analysis'))
+
+                for b in range(maximum_field):
                     rows = df.iloc[:, b].tolist()
+                    if self.mode.variable.get() == 'Customer':
+                        rows = df.iloc[:, column_names[b][1]].tolist()
                     if sheet_list[a[1]].field_list[b].variable.get() == 'Mandatory':
-                        self.present_fields.append((a[0], sheet_list[a[1]].field_list[b].label_text, b))
+                        if self.mode.variable.get() != 'Customer':
+                            self.present_fields.append((a[0], sheet_list[a[1]].field_list[b].label_text, b, b))
+                        else:
+                            self.present_fields.append((a[0], sheet_list[a[1]].field_list[b].label_text, column_names[b][1], b))
                         sheet_list[a[1]].field_list[b].label.label.grid(row = 0, column = b, sticky = tkinter.W, padx = 10)
                         sheet_list[a[1]].field_list[b].text_input.grid(row = 1, column = b, padx = 10)
                         for row in range(len(rows)):
@@ -590,7 +616,10 @@ class MigrationFile:
                                     self.error_list.append((a[0], 'E001', row + 2 , sheet_list[a[1]].field_list[b].label_text, 'This mandatory field is blank'))
                     
                     elif sheet_list[a[1]].field_list[b].variable.get() == 'Optional':
-                        self.present_fields.append((a[0], sheet_list[a[1]].field_list[b].label_text, b))
+                        if self.mode.variable.get() != 'Customer':
+                            self.present_fields.append((a[0], sheet_list[a[1]].field_list[b].label_text, b, b))
+                        else:
+                            self.present_fields.append((a[0], sheet_list[a[1]].field_list[b].label_text, column_names[b][1], b))
                         sheet_list[a[1]].field_list[b].label.label.grid(row = 0, column = b, sticky = tkinter.W, padx = 10)
                         sheet_list[a[1]].field_list[b].text_input.grid(row = 1, column = b, padx = 10)
                     
@@ -621,7 +650,7 @@ class MigrationFile:
 
                 for j in self.present_fields:
                     if j[0] == a[0]:
-                        sheet_present_field.append(j[2])
+                        sheet_present_field.append((j[2], j[3]))
                 
                 df = pd.read_excel(self.entry_path.entry.get(), a[0])
 
@@ -645,7 +674,9 @@ class MigrationFile:
                         return
                     column_formats.append(column_details[col_form].split(';')[3]) # column formats
                 for col_numb in range(len(column_details)):
-                    if column_tech_names[col_numb] in customizing.migration_file_2_max_digits:
+                    if column_tech_names[col_numb] in customizing.migration_file_1_max_digits:
+                        column_int.append('1')
+                    elif column_tech_names[col_numb] in customizing.migration_file_2_max_digits:
                         column_int.append('2')
                     elif column_tech_names[col_numb] in customizing.migration_file_3_max_digits:
                         column_int.append('3')
@@ -653,12 +684,16 @@ class MigrationFile:
                         column_int.append('4')
                     elif column_tech_names[col_numb] in customizing.migration_file_5_max_digits:
                         column_int.append('5')
+                    elif column_tech_names[col_numb] in customizing.migration_file_6_max_digits:
+                        column_int.append('6')
                     elif column_tech_names[col_numb] in customizing.migration_file_7_max_digits:
                         column_int.append('7')
                     elif column_tech_names[col_numb] in customizing.migration_file_8_max_digits:
                         column_int.append('8')
                     elif column_tech_names[col_numb] in customizing.migration_file_10_max_digits:
                         column_int.append('10')
+                    elif column_tech_names[col_numb] in customizing.migration_file_28_max_digits:
+                        column_int.append('28')
                     else:                    
                         column_int.append(column_details[col_numb].split(';')[1]) # column max integer digits
                     column_dec.append(column_details[col_numb].split(';')[2]) # column max decimal digits
@@ -671,50 +706,50 @@ class MigrationFile:
                     if key_counter == len(column_status):
                         break
 
-
                 for b in sheet_present_field:
-                    rows = df.iloc[:, b].tolist()
-                    input_content = sheet_list[a[1]].field_list[b].text_input.get("1.0", tkinter.END).split('\n')
+                    rows = df.iloc[:, b[0]].tolist()
+                    input_content = sheet_list[a[1]].field_list[b[1]].text_input.get("1.0", tkinter.END).split('\n')
                     
                     for row in range(len(rows)):
                         if row >= 7 and str(rows[row]) != 'nan':
-                            if column_formats[b] == 'D':
+                            #format and length controls
+                            if column_formats[b[0]] == 'D':
                                 if not isinstance(rows[row], datetime): # It recognizes both the SAP custom date format and the Excel date format
-                                    self.error_list.append((a[0], 'E003', row + 2 , sheet_list[a[1]].field_list[b].label_text.replace("*", "").replace("+", ""), 'This date is in a wrong format'))
+                                    self.error_list.append((a[0], 'E003', row + 2 , sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), 'This date is in a wrong format'))
 
-                            elif column_formats[b] == 'N':
-                                if (not isinstance(rows[row], int) or rows[row] > 10**int(column_int[b])):
-                                    self.error_list.append((a[0], 'E004', row + 2 , sheet_list[a[1]].field_list[b].label_text.replace("*", "").replace("+", ""), 'This number is in a wrong format'))
+                            elif column_formats[b[0]] == 'N':
+                                if (not isinstance(rows[row], int) or rows[row] > 10**int(column_int[b[0]])):
+                                    self.error_list.append((a[0], 'E004', row + 2 , sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), 'This number is in a wrong format'))
 
-                            elif column_formats[b] == 'P':
+                            elif column_formats[b[0]] == 'P':
                                 if not isinstance(rows[row], int) and not isinstance(rows[row], float):
-                                    self.error_list.append((a[0], 'E004', row + 2 , sheet_list[a[1]].field_list[b].label_text.replace("*", "").replace("+", ""), 'This number is in a wrong format'))
+                                    self.error_list.append((a[0], 'E004', row + 2 , sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), 'This number is in a wrong format'))
                                 elif isinstance(rows[row], int):
-                                    if rows[row] > 10**int(column_int[b]):
-                                        self.error_list.append((a[0], 'E005', row + 2 , sheet_list[a[1]].field_list[b].label_text.replace("*", "").replace("+", ""), 'The maximum length of the field is exceeded'))
+                                    if rows[row] > 10**int(column_int[b[0]]):
+                                        self.error_list.append((a[0], 'E005', row + 2 , sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), 'The maximum length of the field is exceeded'))
                                 else:
                                     if len(str(rows[row]).split('.')[0]) > int(column_int[b]) or len(str(rows[row]).split('.')[1]) > int(column_dec[b]):
-                                        self.error_list.append((a[0], 'E005', row + 2 , sheet_list[a[1]].field_list[b].label_text.replace("*", "").replace("+", ""), 'The maximum length of the field is exceeded'))
+                                        self.error_list.append((a[0], 'E005', row + 2 , sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), 'The maximum length of the field is exceeded'))
 
                             else:
-                                if len(str(rows[row])) > int(column_int[b]):
-                                    self.error_list.append((a[0], 'E005', row + 2 , sheet_list[a[1]].field_list[b].label_text.replace("*", "").replace("+", ""), 'The maximum length of the field is exceeded'))
+                                if len(str(rows[row])) > int(column_int[b[0]]):
+                                    self.error_list.append((a[0], 'E005', row + 2 , sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), 'The maximum length of the field is exceeded'))
                                 if rows[3] in customizing.migration_file_space_forbidden_fields and ' ' in str(rows[row]):
-                                    self.error_list.append((a[0], 'E010', row + 2 , sheet_list[a[1]].field_list[b].label_text.replace("*", "").replace("+", ""), 'The space in this field is forbidden'))
-
-                            if b < key_counter:
+                                    self.error_list.append((a[0], 'E010', row + 2 , sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), 'The space in this field is forbidden'))
+                            #to track all the key fields information
+                            if b[1] < key_counter:
                                 key_field_list_1.append(rows[row])
 
                             if not all(element == '' for element in input_content):
                                 if str(rows[row]) not in input_content:
-                                    self.error_list.append((a[0], 'E007', row + 2 , sheet_list[a[1]].field_list[b].label_text.replace("*", "").replace("+", ""), 'Field filled with a value not foreseen among input fields'))                         
+                                    self.error_list.append((a[0], 'E007', row + 2 , sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), 'Field filled with a value not foreseen among input fields'))                         
 
                 for c in range(int(len(key_field_list_1)/key_counter)):
                     counter = 0
                     for d in range(key_counter):
-                        key_field_list_2.append(key_field_list_1[counter + c])
+                        key_field_list_2.append(key_field_list_1[counter + c]) #to sort the key field values
                         counter += int(len(key_field_list_1)/key_counter)
-                    if key_field_list_2 in key_field_list_3:
+                    if key_field_list_2 in key_field_list_3: #check if key field value is already present in the sheet
                         self.error_list.append((a[0], 'E006', c + 9 , '', 'These key field values are already present in the sheet'))
                     key_field_list_3.append(key_field_list_2)
                     key_field_list_2 = []
@@ -723,8 +758,8 @@ class MigrationFile:
                 main_key_field = []
                 main_key_fields_list = []
                 if self.mode.variable.get() in customizing.migration_file_modes:
-                    if a[0] in customizing.migration_file_main_sheet:
-                        self.mode_key_fields = key_field_list_3
+                    if a[0] in customizing.migration_file_main_sheet: 
+                        self.mode_key_fields = key_field_list_3 #to track all the key field values for the main sheet
                         mode_counter = len(key_field_list_3[0])
                     else:
                         for k in range(len(key_field_list_3)):

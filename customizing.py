@@ -45,27 +45,56 @@ ebs_mt940_dict = {
 
 }
 
-migration_file_modes = ['Fixed asset']
+migration_file_modes = ['Fixed asset', 'Customer', 'Supplier']
 
-migration_file_main_sheet = ['Master Details']
+migration_file_main_sheet = ['Master Details', 'General Data']
 
-migration_file_secondary_sheets = ['Posting Information', 'Time-Dependent Data', 'Depreciation Areas', 'Cumulative Values'] #a list of sheets for which is mandatory to have all the key value of the main sheet
+#a list of sheets for which is mandatory to have all the key value of the main sheet
+migration_file_secondary_sheets = ['Posting Information', 'Time-Dependent Data', 'Depreciation Areas', 'Cumulative Values', #ASSET
+                                   'BP Roles', 'Company Data', 'Sales Data', 'Sales Partner', 'Output Tax', #CUSTOMER
+                                   'Purchasing Organization Data'] #VENDOR
 
-migration_file_space_forbidden_fields = ['BUKRS', 'ANLN1', 'ANLN2', 'ANLKL', 'GSBER', 'KOSTL', 'WERKS', 'AFABE', 'ASSETTRTYP'] #a list of technical name fields for which is forbidden to have spaces
+#a list of technical name fields for which is forbidden to have spaces
+migration_file_space_forbidden_fields = ['BUKRS', 'ANLN1', 'ANLN2', 'ANLKL', 'GSBER', 'KOSTL', 'WERKS', 'AFABE', 'ASSETTRTYP', 'CURRENCY', #ASSET
+                                         'KUNNR', 'BU_GROUP', 'BPEXT', 'COUNTRY', 'REGION', 'LANGU_CORR', 'SMTP_ADDR', #CUSTOMER - GENERAL DATA
+                                         'BP_ROLE', 'MAHNA', 'ZTERM', 'ZWELS_01', 'ZWELS_02', 'ZWELS_03', 'ZWELS_04', 'HBKID', 'AKONT', 'WITHT', 'WT_WITHCD', #CUSTOMER - BP ROLES/COMPANY DATA/WHT
+                                         'VKORG', 'VTWEG', 'SPART', 'KDGRP', 'BZIRK', 'VKBUR', 'WAERS', 'KONDA', 'KALKS', 'LPRIO', 'VSBED', 'INCO1', 'KTGRD', 'PARVW', 'KUNN2', 'ALAND', 'TATYP', 'TAXKD', #CUSTOMER - SALES DATA/SALES PARTNER/OUTPUT TAX
+                                         'BANKS', 'BANKL', 'BANKN', 'IBAN', 'BKONT', 'TAXTYPE', 'TAXNUM', #CUSTOMER - BANK DATA/TAX NUMBER 
+                                         'LIFNR', 'FRGRP', 'ZTERM1', 'REPRF', 'WT_SUBJCT', #VENDOR - COMPANY DATA
+                                         'EKORG', 'EKGRP', 'WEBRE', 'BSTAE', 'LIFN2'] #VENDOR - PURCHASING ORGANIZATION DATA/PARTNER FUNCTION
 
-migration_file_2_max_digits = ['AFABE', 'WITHT', 'WT_WITHCD']
+#fields not to be considered in the related sheet for customer templatesm (there is only a check that these fields are blank)
+mf_customer_general_data = ['LEGAL_ENTY', 'LEGAL_ORG', 'FOUND_DAT', 'LIQUID_DAT', 'LOCATION_1', 'LOCATION_2', 'LOCATION_3','BAHNE',	'BAHNS', 'COUNC', 'CITYC', 'DTAMS', 'DTAWS', 'KNRZA', 'NIELS', 'RPMKR', 'KUKLA', 'HZUOR', 'BRAN1', 'BRAN2', 'BRAN3', 'BRAN4', 'BRAN5', 'KATR1', 'KATR2', 'KATR3', 'KATR4', 'KATR5', 'KATR6', 'KATR7', 'KATR8', 'KATR9', 'KATR10', 'SUFRAMA', 'RG', 'EXP', 'UF', 'RGDATE', 'RIC', 'RNE', 'RNEDATE', 'CNAE', 'LEGALNAT', 'CRTN', 'ICMSTAXPAY', 'INDTYP', 'TDT', 'COMSIZE', 'DECREGPC', 'ECC_NO', 'EXC_REG_NO', 'EXC_RANGE', 'EXC_DIV', 'EXC_COMM', 'EXC_TAX_IND', 'CST_NO', 'LST_NO', 'SERV_TAX_NO', 'PAN_NO', 'PAN_REF_NO', 'BON_AREA_CONF', 'DON_MARK', 'CONSOLIDATE_INVOICE', 'ALLOWANCE_TYPE', 'EINVOICE_MODE', 'J_1KFTBUS', 'J_1KFTIND', 'J_1KFREPRE', 'PH_BIZ_STYLE', 'CITY2', 'HOME_CITY', 'TIME_ZONE', 'LZONE', 'BUILDING', 'ROOM', 'FLOOR', 'CO_NAME', 'HOUSE_NO2', 'STR_SUPPL3', 'LOCATION', 'TXJCD', 'NOTE_TELNR', 'TELNR_LONG_2', 'NOTE_TELNR_2', 'TELNR_LONG_3', 'NOTE_TELNR_3', 'NOTE_MOBILE', 'MOBILE_LONG_2', 'NOTE_MOBILE_2', 'MOBILE_LONG_3', 'NOTE_MOBILE_3', 'NOTE_FAXNR', 'FAXNR_LONG_2', 'NOTE_FAXNR_2', 'FAXNR_LONG_3', 'NOTE_FAXNR_3', 'NOTE_SMTP', 'SMTP_ADDR_2', 'NOTE_SMTP_2', 'SMTP_ADDR_3', 'NOTE_SMTP_3', 'URI_TYP', 'URI_ADDR', 'NOTE_URI', 'SPERR', 'COLLMAN']
+mf_customer_company_data = ['TLFNS', 'TLFXS', 'INTAD']
 
-migration_file_3_max_digits = ['MEINS', 'ASSETTRTYP', 'COUNTRY', 'REGION']
+migration_file_1_max_digits = ['TAXKD', #CUSTOMER
+                               'REPRF', 'WT_SUBJCT', 'WEBRE'] #VENDOR
 
-migration_file_4_max_digits = ['BUKRS', 'WERKS', 'GSBER', 'EVALGROUP1', 'EVALGROUP2', 'EVALGROUP3', 'EVALGROUP4', 'AFASL', 'BU_GROUP', 'KTOKD', 'FRGRP', 'ZTERM', 'MAHNA']
+migration_file_2_max_digits = ['AFABE', #ASSET
+                               'WITHT', 'WT_WITHCD', 'VTWEG', 'SPART', 'KDGRP', 'KONDA', 'KALKS', 'LPRIO', 'VSBED', 'KTGRD', 'PARVW'] #CUSTOMER
 
-migration_file_5_max_digits = ['CURRENCY', 'HBKID']
+migration_file_3_max_digits = ['MEINS', 'ASSETTRTYP', #ASSET
+                               'COUNTRY', 'REGION', 'INCO1', 'ALAND', 'BANKS', #CUSTOMER
+                               'EKGRP'] #VENDOR 
 
-migration_file_7_max_digits = ['BP_ROLE']
+migration_file_4_max_digits = ['BUKRS', 'WERKS', 'GSBER', 'EVALGROUP1', 'EVALGROUP2', 'EVALGROUP3', 'EVALGROUP4', 'AFASL', #ASSET
+                               'BU_GROUP', 'KTOKD', 'FRGRP', 'ZTERM', 'MAHNA', 'VKORG', 'VKBUR', 'TATYP', 'TAXTYPE', #CUSTOMER
+                               'FRGRP', 'ZTERM1', 'EKORG', 'BSTAE'] #VENDOR
 
-migration_file_8_max_digits = ['ANLKL', 'EVALGROUP5']
+migration_file_5_max_digits = ['CURRENCY', #ASSET
+                               'HBKID', 'WAERS'] #CUSTOMER
 
-migration_file_10_max_digits = ['KOSTL', 'VENDOR_NO', 'LIFNR', 'KUNNR', 'AKONT', 'FDGRV', 'ZWELS_01', 'ZWELS_02', 'ZWELS_03', 'ZWELS_04']
+migration_file_6_max_digits = ['BZIRK'], #CUSTOMER
+
+migration_file_7_max_digits = ['BP_ROLE'] #CUSTOMER
+
+migration_file_8_max_digits = ['ANLKL', 'EVALGROUP5'] #ASSET
+
+migration_file_10_max_digits = ['KOSTL', 'VENDOR_NO', #ASSET
+                                'KUNNR', 'AKONT', 'FDGRV', 'ZWELS_01', 'ZWELS_02', 'ZWELS_03', 'ZWELS_04', 'KUNN2', #CUSTOMER
+                                'LIFNR'] #VENDOR
+
+migration_file_28_max_digits = ['INCO2'] #CUSTOMER
 
 class Root ():
     def __init__(
