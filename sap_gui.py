@@ -514,7 +514,13 @@ class MigrationFile:
                     column_list = df.iloc[6, :].tolist()
                     column_names = []
                     for column in range(len(column_list)):
-                        if self.mode.variable.get() != 'Customer' or (column_tech_names[column] not in customizing.mf_customer_general_data and column_tech_names[column] not in customizing.mf_customer_company_data):
+                        if self.mode.variable.get() == 'Customer':
+                            if column_tech_names[column] not in customizing.mf_customer_general_data and column_tech_names[column] not in customizing.mf_customer_company_data:
+                                column_names.append(column_list[column].split('\n')[0])
+                        elif self.mode.variable.get() == 'Supplier':
+                            if column_tech_names[column] not in customizing.mf_supplier_general_data:
+                                column_names.append(column_list[column].split('\n')[0])
+                        else:
                             column_names.append(column_list[column].split('\n')[0])
 
                     maximum_field = len(column_names)
@@ -583,7 +589,13 @@ class MigrationFile:
                 column_list = df.iloc[6, :].tolist()
                 column_names = []
                 for column in range(len(column_list)):
-                    if self.mode.variable.get() != 'Customer' or (column_tech_names[column] not in customizing.mf_customer_general_data and column_tech_names[column] not in customizing.mf_customer_company_data):
+                    if self.mode.variable.get() == 'Customer':
+                        if column_tech_names[column] not in customizing.mf_customer_general_data and column_tech_names[column] not in customizing.mf_customer_company_data:
+                            column_names.append((column_list[column].split('\n')[0], column))
+                    elif self.mode.variable.get() == 'Supplier':
+                        if column_tech_names[column] not in customizing.mf_supplier_general_data:
+                            column_names.append((column_list[column].split('\n')[0], column))
+                    else:
                         column_names.append((column_list[column].split('\n')[0], column))
 
                 maximum_field = len(column_names)
@@ -599,15 +611,19 @@ class MigrationFile:
                                     if str(all_rows[row]) != 'nan' or type(all_rows[row]) != float:
                                         self.error_list.append((a[0], 'W001', row + 2 , column_list[n].split('\n')[0].replace("*", "").replace("+", ""), 'This field is not blank, but is in a column not considered in this analysis'))
 
+                elif self.mode.variable.get() == 'Supplier' and a[0] == 'General Data':
+                    for n in range(len(column_tech_names)):
+                        all_rows = df.iloc[:, n].tolist()
+                        if column_tech_names[n] in customizing.mf_customer_general_data or column_tech_names[n] in customizing.mf_customer_company_data:
+                            for row in range(len(all_rows)):
+                                if row >= 7:
+                                    if str(all_rows[row]) != 'nan' or type(all_rows[row]) != float:
+                                        self.error_list.append((a[0], 'W001', row + 2 , column_list[n].split('\n')[0].replace("*", "").replace("+", ""), 'This field is not blank, but is in a column not considered in this analysis'))
+
                 for b in range(maximum_field):
-                    rows = df.iloc[:, b].tolist()
-                    if self.mode.variable.get() == 'Customer':
-                        rows = df.iloc[:, column_names[b][1]].tolist()
+                    rows = df.iloc[:, column_names[b][1]].tolist()
                     if sheet_list[a[1]].field_list[b].variable.get() == 'Mandatory':
-                        if self.mode.variable.get() != 'Customer':
-                            self.present_fields.append((a[0], sheet_list[a[1]].field_list[b].label_text, b, b))
-                        else:
-                            self.present_fields.append((a[0], sheet_list[a[1]].field_list[b].label_text, column_names[b][1], b))
+                        self.present_fields.append((a[0], sheet_list[a[1]].field_list[b].label_text, column_names[b][1], b))
                         sheet_list[a[1]].field_list[b].label.label.grid(row = 0, column = b, sticky = tkinter.W, padx = 10)
                         sheet_list[a[1]].field_list[b].text_input.grid(row = 1, column = b, padx = 10)
                         for row in range(len(rows)):
@@ -616,10 +632,7 @@ class MigrationFile:
                                     self.error_list.append((a[0], 'E001', row + 2 , sheet_list[a[1]].field_list[b].label_text, 'This mandatory field is blank'))
                     
                     elif sheet_list[a[1]].field_list[b].variable.get() == 'Optional':
-                        if self.mode.variable.get() != 'Customer':
-                            self.present_fields.append((a[0], sheet_list[a[1]].field_list[b].label_text, b, b))
-                        else:
-                            self.present_fields.append((a[0], sheet_list[a[1]].field_list[b].label_text, column_names[b][1], b))
+                        self.present_fields.append((a[0], sheet_list[a[1]].field_list[b].label_text, column_names[b][1], b))
                         sheet_list[a[1]].field_list[b].label.label.grid(row = 0, column = b, sticky = tkinter.W, padx = 10)
                         sheet_list[a[1]].field_list[b].text_input.grid(row = 1, column = b, padx = 10)
                     
@@ -641,6 +654,12 @@ class MigrationFile:
 
         def migration_analysis ():
             mode_counter = 0
+            bp_code = []
+            postal_code = []
+            country = []
+            bp_code_tax = []
+            tax_type = []
+            tax_number = []
             for a in self.sheet_names_list:
                 key_field_list_1 =[]
                 key_field_list_2 =[]
@@ -734,8 +753,23 @@ class MigrationFile:
                             else:
                                 if len(str(rows[row])) > int(column_int[b[0]]):
                                     self.error_list.append((a[0], 'E005', row + 2 , sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), 'The maximum length of the field is exceeded'))
+
                                 if rows[3] in customizing.migration_file_space_forbidden_fields and ' ' in str(rows[row]):
                                     self.error_list.append((a[0], 'E010', row + 2 , sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), 'The space in this field is forbidden'))
+                                
+                                if rows[3] == 'SMTP_ADDR' and '@' not in rows[row]:
+                                    self.error_list.append((a[0], 'E011', row + 2 , sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), 'In this field the "@" is mandatory'))
+
+                                if self.mode.variable.get() == 'Customer':
+                                    if rows[3] == 'PARVW' and str(rows[row]) not in customizing.mf_partner_function_customer:
+                                        self.error_list.append((a[0], 'E012', row + 2 , sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), 'In this field the standard acceptable values are "AG", "RE", "RG", "WE" and "ZM"'))
+                                elif self.mode.variable.get() == 'Supplier':
+                                    if rows[3] == 'PARVW' and str(rows[row]) not in customizing.mf_partner_function_supplier:
+                                        self.error_list.append((a[0], 'E012', row + 2 , sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), 'In this field the standard acceptable values are "LF", "WL", "BA", "RS" and "ZM"'))
+                                    if (rows[3] == 'WT_SUBJCT' or rows[3] == 'WEBRE') and str(rows[row]) != 'X':
+                                        self.error_list.append((a[0], 'E012', row + 2 , sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), 'In this field the standard acceptable value is "X"'))
+
+
                             #to track all the key fields information
                             if b[1] < key_counter:
                                 key_field_list_1.append(rows[row])
@@ -743,6 +777,45 @@ class MigrationFile:
                             if not all(element == '' for element in input_content):
                                 if str(rows[row]) not in input_content:
                                     self.error_list.append((a[0], 'E007', row + 2 , sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), 'Field filled with a value not foreseen among input fields'))                         
+                        if row >= 7:
+                            if a[0] == 'General Data':
+                                if self.mode.variable.get() == 'Customer':
+                                    if rows[3] == 'KUNNR':
+                                        bp_code.append(str(rows[row]))
+                                elif self.mode.variable.get() == 'Supplier':
+                                    if rows[3] == 'LIFNR':
+                                        bp_code.append(str(rows[row]))
+
+                                if rows[3] == 'POST_CODE1':
+                                    postal_code.append(str(rows[row]))
+
+                                elif rows[3] == 'COUNTRY':
+                                    country.append(str(rows[row]))
+                            
+                            elif a[0] == 'Tax Numbers' and (self.mode.variable.get() == 'Customer' or self.mode.variable.get() == 'Supplier'):
+                                if rows[3] == 'KUNNR' or rows[3] == 'LIFNR':
+                                    bp_code_tax.append(str(rows[row]))
+
+                                elif rows[3] == 'TAXTYPE':
+                                    tax_type.append(str(rows[row]))
+                                
+                                elif rows[3] == 'TAXNUM':
+                                    tax_number.append(str(rows[row]))
+
+                if a[0] == 'General Data':
+                    for w in range(len(country)):
+                        error_postal_code = customizing.postal_code_check(postal_code[w], country[w])
+                        if error_postal_code != '':
+                            self.error_list.append((a[0], 'W002', w + 9 , 'Postal Code', f'The postal code is mandatory by standard for {country[w]}; check OY17 t-code. ' + error_postal_code))
+                elif a[0] == 'Tax Numbers':
+                    if self.mode.variable.get() == 'Customer' or self.mode.variable.get() == 'Supplier':
+                        for w in range(len(bp_code)):
+                            for x in range(len(bp_code_tax)):
+                                if bp_code[w] == bp_code_tax[x]:
+                                    error_vat = customizing.vat_check(tax_type[x], tax_number[x], country[w])
+                                    if error_vat != '':
+                                        self.error_list.append((a[0], 'W003', x + 9 , 'Tax Number', error_vat))
+
 
                 for c in range(int(len(key_field_list_1)/key_counter)):
                     counter = 0

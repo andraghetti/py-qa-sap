@@ -2,6 +2,7 @@ import tkinter
 from tkinter import ttk
 import tkinter.messagebox
 import pyperclip
+import re
 
 ebs_mt940_dict = {
     'FCHG': 'Charges and other expenses',
@@ -63,9 +64,14 @@ migration_file_space_forbidden_fields = ['BUKRS', 'ANLN1', 'ANLN2', 'ANLKL', 'GS
                                          'LIFNR', 'FRGRP', 'ZTERM1', 'REPRF', 'WT_SUBJCT', #VENDOR - COMPANY DATA
                                          'EKORG', 'EKGRP', 'WEBRE', 'BSTAE', 'LIFN2'] #VENDOR - PURCHASING ORGANIZATION DATA/PARTNER FUNCTION
 
-#fields not to be considered in the related sheet for customer templatesm (there is only a check that these fields are blank)
-mf_customer_general_data = ['LEGAL_ENTY', 'LEGAL_ORG', 'FOUND_DAT', 'LIQUID_DAT', 'LOCATION_1', 'LOCATION_2', 'LOCATION_3','BAHNE',	'BAHNS', 'COUNC', 'CITYC', 'DTAMS', 'DTAWS', 'KNRZA', 'NIELS', 'RPMKR', 'KUKLA', 'HZUOR', 'BRAN1', 'BRAN2', 'BRAN3', 'BRAN4', 'BRAN5', 'KATR1', 'KATR2', 'KATR3', 'KATR4', 'KATR5', 'KATR6', 'KATR7', 'KATR8', 'KATR9', 'KATR10', 'SUFRAMA', 'RG', 'EXP', 'UF', 'RGDATE', 'RIC', 'RNE', 'RNEDATE', 'CNAE', 'LEGALNAT', 'CRTN', 'ICMSTAXPAY', 'INDTYP', 'TDT', 'COMSIZE', 'DECREGPC', 'ECC_NO', 'EXC_REG_NO', 'EXC_RANGE', 'EXC_DIV', 'EXC_COMM', 'EXC_TAX_IND', 'CST_NO', 'LST_NO', 'SERV_TAX_NO', 'PAN_NO', 'PAN_REF_NO', 'BON_AREA_CONF', 'DON_MARK', 'CONSOLIDATE_INVOICE', 'ALLOWANCE_TYPE', 'EINVOICE_MODE', 'J_1KFTBUS', 'J_1KFTIND', 'J_1KFREPRE', 'PH_BIZ_STYLE', 'CITY2', 'HOME_CITY', 'TIME_ZONE', 'LZONE', 'BUILDING', 'ROOM', 'FLOOR', 'CO_NAME', 'HOUSE_NO2', 'STR_SUPPL3', 'LOCATION', 'TXJCD', 'NOTE_TELNR', 'TELNR_LONG_2', 'NOTE_TELNR_2', 'TELNR_LONG_3', 'NOTE_TELNR_3', 'NOTE_MOBILE', 'MOBILE_LONG_2', 'NOTE_MOBILE_2', 'MOBILE_LONG_3', 'NOTE_MOBILE_3', 'NOTE_FAXNR', 'FAXNR_LONG_2', 'NOTE_FAXNR_2', 'FAXNR_LONG_3', 'NOTE_FAXNR_3', 'NOTE_SMTP', 'SMTP_ADDR_2', 'NOTE_SMTP_2', 'SMTP_ADDR_3', 'NOTE_SMTP_3', 'URI_TYP', 'URI_ADDR', 'NOTE_URI', 'SPERR', 'COLLMAN']
+#fields not to be considered in the related sheet for customer template (there is only a check about these fields are blank)
+mf_customer_general_data = ['LEGAL_ENTY', 'LEGAL_ORG', 'FOUND_DAT', 'LIQUID_DAT', 'LOCATION_1', 'LOCATION_2', 'LOCATION_3', 'BAHNE', 'BAHNS', 'COUNC', 'CITYC', 'DTAMS', 'DTAWS', 'KNRZA', 'NIELS', 'RPMKR', 'KUKLA', 'HZUOR', 'BRAN1', 'BRAN2', 'BRAN3', 'BRAN4', 'BRAN5', 'KATR1', 'KATR2', 'KATR3', 'KATR4', 'KATR5', 'KATR6', 'KATR7', 'KATR8', 'KATR9', 'KATR10', 'SUFRAMA', 'RG', 'EXP', 'UF', 'RGDATE', 'RIC', 'RNE', 'RNEDATE', 'CNAE', 'LEGALNAT', 'CRTN', 'ICMSTAXPAY', 'INDTYP', 'TDT', 'COMSIZE', 'DECREGPC', 'ECC_NO', 'EXC_REG_NO', 'EXC_RANGE', 'EXC_DIV', 'EXC_COMM', 'EXC_TAX_IND', 'CST_NO', 'LST_NO', 'SERV_TAX_NO', 'PAN_NO', 'PAN_REF_NO', 'BON_AREA_CONF', 'DON_MARK', 'CONSOLIDATE_INVOICE', 'ALLOWANCE_TYPE', 'EINVOICE_MODE', 'J_1KFTBUS', 'J_1KFTIND', 'J_1KFREPRE', 'PH_BIZ_STYLE', 'CITY2', 'HOME_CITY', 'TIME_ZONE', 'LZONE', 'BUILDING', 'ROOM', 'FLOOR', 'CO_NAME', 'HOUSE_NO2', 'STR_SUPPL3', 'LOCATION', 'TXJCD', 'NOTE_TELNR', 'TELNR_LONG_2', 'NOTE_TELNR_2', 'TELNR_LONG_3', 'NOTE_TELNR_3', 'NOTE_MOBILE', 'MOBILE_LONG_2', 'NOTE_MOBILE_2', 'MOBILE_LONG_3', 'NOTE_MOBILE_3', 'NOTE_FAXNR', 'FAXNR_LONG_2', 'NOTE_FAXNR_2', 'FAXNR_LONG_3', 'NOTE_FAXNR_3', 'NOTE_SMTP', 'SMTP_ADDR_2', 'NOTE_SMTP_2', 'SMTP_ADDR_3', 'NOTE_SMTP_3', 'URI_TYP', 'URI_ADDR', 'NOTE_URI', 'SPERR', 'COLLMAN']
 mf_customer_company_data = ['TLFNS', 'TLFXS', 'INTAD']
+
+#fields not to be considered in the related sheet for supplier template (there is only a check about these fields are blank)
+mf_supplier_general_data = ['LEGAL_ENTY', 'LEGAL_ORG', 'FOUND_DAT', 'LIQUID_DAT', 'LOCATION_1', 'LOCATION_2', 'LOCATION_3', 'DTAMS', 'DTAWS', 'LNRZA', 'ESRNR', 'TERM_LI', 'MIN_COMP', 'COMSIZE', 'DECREGPC', 'CRC_NUM', 'RG', 'EXP', 'UF', 'RGDATE', 'RIC', 'RNE', 'RNEDATE', 'CNAE', 'LEGALNAT', 'CRTN', 'ICMSTAXPAY', 'INDTYP', 'TDT', 'J_1IEXCD', 'J_1IEXRN', 'J_1IEXRG', 'J_1IEXDI', 'J_1IEXCO', 'J_1IVTYP', 'J_1I_CUSTOMS', 'J_1IEXCIVE', 'J_1ISSIST', 'J_1IVENCRE', 'J_1ICSTNO', 'J_1ILSTNO', 'J_1ISERN', 'J_1IPANNO', 'J_1IPANREF', 'J_1IPANVALDT', 'J_1IDEDREF', 'VEN_CLASS', 'J_1KFTBUS', 'J_1KFTIND', 'J_1KFREPRE', 'CATEG', 'STATUS', 'VFNUM', 'VFNID', 'PARTNER_NAME', 'PARTNER_UTR', 'CRN', 'ALLOWANCE_TYPE', 'AU_CARRYING_ENT', 'AU_IND_UNDER_18', 'AU_PAYMENT_NOT_EXCEED_75', 'AU_WHOLLY_INP_TAXED', 'AU_PARTNER_WITHOUT_GAIN', 'AU_NOT_ENTITLED_ABN', 'AU_PAYMENT_EXEMPT', 'AU_PRIVATE_HOBBY', 'AU_DOMESTIC_NATURE', 'SC_CAPITAL', 'SC_CURRENCY', 'CITY2', 'HOME_CITY', 'TIME_ZONE', 'LZONE', 'BUILDING', 'ROOM', 'FLOOR', 'CO_NAME', 'HOUSE_NO2', 'STR_SUPPL3', 'LOCATION', 'TXJCD', 'NOTE_TELNR', 'TELNR_LONG_2', 'NOTE_TELNR_2', 'TELNR_LONG_3', 'NOTE_TELNR_3', 'NOTE_MOBILE', 'MOBILE_LONG_2', 'NOTE_MOBILE_2', 'MOBILE_LONG_3', 'NOTE_MOBILE_3', 'NOTE_FAXNR', 'FAXNR_LONG_2', 'NOTE_FAXNR_2', 'FAXNR_LONG_3', 'NOTE_FAXNR_3', 'NOTE_SMTP', 'SMTP_ADDR_2', 'NOTE_SMTP_2', 'SMTP_ADDR_3', 'NOTE_SMTP_3', 'URI_TYP', 'URI_ADDR', 'NOTE_URI', 'SPERR', 'SPERM']
+
+print(len(mf_supplier_general_data))
 
 migration_file_1_max_digits = ['TAXKD', #CUSTOMER
                                'REPRF', 'WT_SUBJCT', 'WEBRE'] #VENDOR
@@ -95,6 +101,10 @@ migration_file_10_max_digits = ['KOSTL', 'VENDOR_NO', #ASSET
                                 'LIFNR'] #VENDOR
 
 migration_file_28_max_digits = ['INCO2'] #CUSTOMER
+
+mf_partner_function_customer = ['AG', 'RE', 'RG', 'WE', 'ZM']
+
+mf_partner_function_supplier = ['LF', 'WL', 'BA', 'RS', 'ZM']
 
 class Root ():
     def __init__(
@@ -635,3 +645,39 @@ class Sheet ():
                            #self.field_71, self.field_72, self.field_73, self.field_74, self.field_75, self.field_76, self.field_77, self.field_78, self.field_79, self.field_80,
                            #self.field_81, self.field_82, self.field_83, self.field_84, self.field_85, self.field_86, self.field_87, self.field_88, self.field_89, self.field_90,
                            #self.field_91, self.field_92, self.field_93, self.field_94, self.field_95, self.field_96, self.field_97, self.field_98, self.field_99, self.field_100
+
+def postal_code_check (postal_code: str, country: str):
+    error = ''
+    if country == 'AD' and not re.compile(r'^AD\d{3}$').match(postal_code):
+        error = 'Should be in format "ANA NAN"'
+    elif country == 'CA' and not re.compile(r'^[A-Z]{1}\d{1}[A-Z]{1} \d{1}[A-Z]{1}\d{1}$').match(postal_code):
+        error = 'Should be in format "ANA NAN"'
+    elif (country == 'CZ' or country == 'GR' or country == 'SE' or country == 'SK') and not re.compile(r'^\d{3} \d{2}$').match(postal_code):
+        error = 'Should be in format "NNN NN"'
+    elif (country == 'DE' or country == 'IT' or country == 'FR' or country == 'ES') and not re.compile(r'^\d{5}$').match(postal_code):
+        error = 'Should be in format "NNNNN"'
+    elif country == 'GB' and len(postal_code) > 9:
+        error = 'Should not have a length greater than 9'
+    elif country == 'MT' and not re.compile(r'^[A-Z]{3} \d{4}$').match(postal_code):
+        error = 'Should be in format "AAA NNNN"'
+    elif country == 'NL' and not re.compile(r'^\d{4} [A-Z]{2}$').match(postal_code):
+        error = 'Should be in format "NNNN AA"'
+    elif country == 'PL' and not re.compile(r'^\d{2}-\d{3}$').match(postal_code):
+        error = 'Should be in format "NN-NNN"'
+    elif country == 'PT' and not re.compile(r'^\d{4}-\d{3}$').match(postal_code):
+        error = 'Should be in format "NNNN-NNN"'
+
+    return error
+
+
+def vat_check (tax_type: str, tax_number:str, country: str):
+    error = ''
+    if country == 'IT':
+        if tax_type == 'IT0' and not re.compile(r'^IT\d{11}$').match(tax_number):
+            error = f'For country {country} and tax type {tax_type}, the tax number should be in format "ITNNNNNNNNNNN"'
+        elif tax_type == 'IT1' and not re.compile(r'^[A-Z]{6}\d{2}[A-Z]{1}\d{2}[A-Z]{1}\d{3}[A-Z]{1}$').match(tax_number):
+            error = f'For country {country} and tax type {tax_type}, the tax number should be in format "AAAAAANNANNANNNA"'
+        elif tax_type == 'IT2' and not re.compile(r'^\d{11}$').match(tax_number):
+            error = f'For country {country} and tax type {tax_type}, the tax number should be in format "NNNNNNNNNNN"'
+
+    return error
