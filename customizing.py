@@ -46,9 +46,9 @@ ebs_mt940_dict = {
 
 }
 
-migration_file_modes = ['Fixed asset', 'Customer', 'Supplier']
+migration_file_modes = ['Fixed asset', 'Customer', 'Supplier', 'FI - Accounts receivable open item', 'FI - Accounts payable open item']
 
-migration_file_main_sheet = ['Master Details', 'General Data']
+migration_file_main_sheet = ['Master Details', 'General Data', 'Customer Open Items', 'Vendor Open Items']
 
 #a list of sheets for which is mandatory to have all the key value of the main sheet
 migration_file_secondary_sheets = ['Posting Information', 'Time-Dependent Data', 'Depreciation Areas', 'Cumulative Values', #ASSET
@@ -62,7 +62,9 @@ migration_file_space_forbidden_fields = ['BUKRS', 'ANLN1', 'ANLN2', 'ANLKL', 'GS
                                          'VKORG', 'VTWEG', 'SPART', 'KDGRP', 'BZIRK', 'VKBUR', 'WAERS', 'KONDA', 'KALKS', 'LPRIO', 'VSBED', 'INCO1', 'KTGRD', 'PARVW', 'KUNN2', 'ALAND', 'TATYP', 'TAXKD', #CUSTOMER - SALES DATA/SALES PARTNER/OUTPUT TAX
                                          'BANKS', 'BANKL', 'BANKN', 'IBAN', 'BKONT', 'TAXTYPE', 'TAXNUM', #CUSTOMER - BANK DATA/TAX NUMBER 
                                          'LIFNR', 'FRGRP', 'ZTERM1', 'REPRF', 'WT_SUBJCT', #VENDOR - COMPANY DATA
-                                         'EKORG', 'EKGRP', 'WEBRE', 'BSTAE', 'LIFN2'] #VENDOR - PURCHASING ORGANIZATION DATA/PARTNER FUNCTION
+                                         'EKORG', 'EKGRP', 'WEBRE', 'BSTAE', 'LIFN2', #VENDOR - PURCHASING ORGANIZATION DATA/PARTNER FUNCTION
+                                         'PROVZ', 'SWIFT', #BANK
+                                         'GKONT', 'UMSKZ', 'HWAER', 'HWAE2', 'HWAE3', 'MWSKZ', 'ZLSCH', 'ZLSPR', 'PRCTR', 'FKBER', 'PSPNR', 'WT_TYPE', 'WT_CODE'] #CUSTOMER OI
 
 #fields not to be considered in the related sheet for customer template (there is only a check about these fields are blank)
 mf_customer_general_data = ['LEGAL_ENTY', 'LEGAL_ORG', 'FOUND_DAT', 'LIQUID_DAT', 'LOCATION_1', 'LOCATION_2', 'LOCATION_3', 'BAHNE', 'BAHNS', 'COUNC', 'CITYC', 'DTAMS', 'DTAWS', 'KNRZA', 'NIELS', 'RPMKR', 'KUKLA', 'HZUOR', 'BRAN1', 'BRAN2', 'BRAN3', 'BRAN4', 'BRAN5', 'KATR1', 'KATR2', 'KATR3', 'KATR4', 'KATR5', 'KATR6', 'KATR7', 'KATR8', 'KATR9', 'KATR10', 'SUFRAMA', 'RG', 'EXP', 'UF', 'RGDATE', 'RIC', 'RNE', 'RNEDATE', 'CNAE', 'LEGALNAT', 'CRTN', 'ICMSTAXPAY', 'INDTYP', 'TDT', 'COMSIZE', 'DECREGPC', 'ECC_NO', 'EXC_REG_NO', 'EXC_RANGE', 'EXC_DIV', 'EXC_COMM', 'EXC_TAX_IND', 'CST_NO', 'LST_NO', 'SERV_TAX_NO', 'PAN_NO', 'PAN_REF_NO', 'BON_AREA_CONF', 'DON_MARK', 'CONSOLIDATE_INVOICE', 'ALLOWANCE_TYPE', 'EINVOICE_MODE', 'J_1KFTBUS', 'J_1KFTIND', 'J_1KFREPRE', 'PH_BIZ_STYLE', 'CITY2', 'HOME_CITY', 'TIME_ZONE', 'LZONE', 'BUILDING', 'ROOM', 'FLOOR', 'CO_NAME', 'HOUSE_NO2', 'STR_SUPPL3', 'LOCATION', 'TXJCD', 'NOTE_TELNR', 'TELNR_LONG_2', 'NOTE_TELNR_2', 'TELNR_LONG_3', 'NOTE_TELNR_3', 'NOTE_MOBILE', 'MOBILE_LONG_2', 'NOTE_MOBILE_2', 'MOBILE_LONG_3', 'NOTE_MOBILE_3', 'NOTE_FAXNR', 'FAXNR_LONG_2', 'NOTE_FAXNR_2', 'FAXNR_LONG_3', 'NOTE_FAXNR_3', 'NOTE_SMTP', 'SMTP_ADDR_2', 'NOTE_SMTP_2', 'SMTP_ADDR_3', 'NOTE_SMTP_3', 'URI_TYP', 'URI_ADDR', 'NOTE_URI', 'SPERR', 'COLLMAN']
@@ -71,40 +73,54 @@ mf_customer_company_data = ['TLFNS', 'TLFXS', 'INTAD']
 #fields not to be considered in the related sheet for supplier template (there is only a check about these fields are blank)
 mf_supplier_general_data = ['LEGAL_ENTY', 'LEGAL_ORG', 'FOUND_DAT', 'LIQUID_DAT', 'LOCATION_1', 'LOCATION_2', 'LOCATION_3', 'DTAMS', 'DTAWS', 'LNRZA', 'ESRNR', 'TERM_LI', 'MIN_COMP', 'COMSIZE', 'DECREGPC', 'CRC_NUM', 'RG', 'EXP', 'UF', 'RGDATE', 'RIC', 'RNE', 'RNEDATE', 'CNAE', 'LEGALNAT', 'CRTN', 'ICMSTAXPAY', 'INDTYP', 'TDT', 'J_1IEXCD', 'J_1IEXRN', 'J_1IEXRG', 'J_1IEXDI', 'J_1IEXCO', 'J_1IVTYP', 'J_1I_CUSTOMS', 'J_1IEXCIVE', 'J_1ISSIST', 'J_1IVENCRE', 'J_1ICSTNO', 'J_1ILSTNO', 'J_1ISERN', 'J_1IPANNO', 'J_1IPANREF', 'J_1IPANVALDT', 'J_1IDEDREF', 'VEN_CLASS', 'J_1KFTBUS', 'J_1KFTIND', 'J_1KFREPRE', 'CATEG', 'STATUS', 'VFNUM', 'VFNID', 'PARTNER_NAME', 'PARTNER_UTR', 'CRN', 'ALLOWANCE_TYPE', 'AU_CARRYING_ENT', 'AU_IND_UNDER_18', 'AU_PAYMENT_NOT_EXCEED_75', 'AU_WHOLLY_INP_TAXED', 'AU_PARTNER_WITHOUT_GAIN', 'AU_NOT_ENTITLED_ABN', 'AU_PAYMENT_EXEMPT', 'AU_PRIVATE_HOBBY', 'AU_DOMESTIC_NATURE', 'SC_CAPITAL', 'SC_CURRENCY', 'CITY2', 'HOME_CITY', 'TIME_ZONE', 'LZONE', 'BUILDING', 'ROOM', 'FLOOR', 'CO_NAME', 'HOUSE_NO2', 'STR_SUPPL3', 'LOCATION', 'TXJCD', 'NOTE_TELNR', 'TELNR_LONG_2', 'NOTE_TELNR_2', 'TELNR_LONG_3', 'NOTE_TELNR_3', 'NOTE_MOBILE', 'MOBILE_LONG_2', 'NOTE_MOBILE_2', 'MOBILE_LONG_3', 'NOTE_MOBILE_3', 'NOTE_FAXNR', 'FAXNR_LONG_2', 'NOTE_FAXNR_2', 'FAXNR_LONG_3', 'NOTE_FAXNR_3', 'NOTE_SMTP', 'SMTP_ADDR_2', 'NOTE_SMTP_2', 'SMTP_ADDR_3', 'NOTE_SMTP_3', 'URI_TYP', 'URI_ADDR', 'NOTE_URI', 'SPERR', 'SPERM']
 
-print(len(mf_supplier_general_data))
+#fields not to be considered in the related sheet for customer/vendor open items template (there is only a check about these fields are blank)
+mf_bp_open_items = ['ZBD1T', 'ZBD1P', 'ZBD2T', 'ZBD2P', 'ZBD3T', 'SKFBT', 'ACSKT']
 
 migration_file_1_max_digits = ['TAXKD', #CUSTOMER
-                               'REPRF', 'WT_SUBJCT', 'WEBRE'] #VENDOR
+                               'REPRF', 'WT_SUBJCT', 'WEBRE', #VENDOR
+                               'UMSKZ', 'ZLSCH', 'ZLSPR'] #CUSTOMER OI
 
 migration_file_2_max_digits = ['AFABE', #ASSET
-                               'WITHT', 'WT_WITHCD', 'VTWEG', 'SPART', 'KDGRP', 'KONDA', 'KALKS', 'LPRIO', 'VSBED', 'KTGRD', 'PARVW'] #CUSTOMER
+                               'WITHT', 'WT_WITHCD', 'VTWEG', 'SPART', 'KDGRP', 'KONDA', 'KALKS', 'LPRIO', 'VSBED', 'KTGRD', 'PARVW', #CUSTOMER
+                               'MWSKZ', 'WT_TYPE', 'WT_CODE'] #CUSTOMER OI
 
 migration_file_3_max_digits = ['MEINS', 'ASSETTRTYP', #ASSET
                                'COUNTRY', 'REGION', 'INCO1', 'ALAND', 'BANKS', #CUSTOMER
-                               'EKGRP'] #VENDOR 
+                               'EKGRP', #VENDOR
+                               'PROVZ'] #BANK
 
 migration_file_4_max_digits = ['BUKRS', 'WERKS', 'GSBER', 'EVALGROUP1', 'EVALGROUP2', 'EVALGROUP3', 'EVALGROUP4', 'AFASL', #ASSET
                                'BU_GROUP', 'KTOKD', 'FRGRP', 'ZTERM', 'MAHNA', 'VKORG', 'VKBUR', 'TATYP', 'TAXTYPE', #CUSTOMER
-                               'FRGRP', 'ZTERM1', 'EKORG', 'BSTAE'] #VENDOR
+                               'FRGRP', 'ZTERM1', 'EKORG', 'BSTAE', #VENDOR
+                               'FKBER'] #CUSTOMER OI
 
 migration_file_5_max_digits = ['CURRENCY', #ASSET
-                               'HBKID', 'WAERS'] #CUSTOMER
+                               'HBKID', 'WAERS', #CUSTOMER
+                               'HWAER', 'HWAE2', 'HWAE3'] #CUSTOMER OI
 
 migration_file_6_max_digits = ['BZIRK'], #CUSTOMER
 
 migration_file_7_max_digits = ['BP_ROLE'] #CUSTOMER
 
-migration_file_8_max_digits = ['ANLKL', 'EVALGROUP5'] #ASSET
+migration_file_8_max_digits = ['ANLKL', 'EVALGROUP5', #ASSET
+                               'PSPNR'] #CUSTOMER OI
 
 migration_file_10_max_digits = ['KOSTL', 'VENDOR_NO', #ASSET
                                 'KUNNR', 'AKONT', 'FDGRV', 'ZWELS_01', 'ZWELS_02', 'ZWELS_03', 'ZWELS_04', 'KUNN2', #CUSTOMER
-                                'LIFNR'] #VENDOR
+                                'LIFNR', #VENDOR
+                                'GKONT', 'PRCTR'] #CUSTOMER OI
 
 migration_file_28_max_digits = ['INCO2'] #CUSTOMER
 
 mf_partner_function_customer = ['AG', 'RE', 'RG', 'WE', 'ZM']
 
 mf_partner_function_supplier = ['LF', 'WL', 'BA', 'RS', 'ZM']
+
+mf_postal_code_country = ['AD', 'CA', 'CZ', 'DE', 'ES' 'FR', 'GB', 'GR', 'IT', 'MT', 'NG', 'NL', 'PL', 'PT', 'SE', 'SK']
+
+mf_vat_country = ['IT', 'NG', 'AD']
+
+mf_bank_country = ['IT', 'ES', 'BE', 'FR', 'NL', 'FI', 'LU', 'CH', 'GB', 'DE', 'IE', 'NG']
 
 class Root ():
     def __init__(
@@ -679,5 +695,121 @@ def vat_check (tax_type: str, tax_number:str, country: str):
             error = f'For country {country} and tax type {tax_type}, the tax number should be in format "AAAAAANNANNANNNA"'
         elif tax_type == 'IT2' and not re.compile(r'^\d{11}$').match(tax_number):
             error = f'For country {country} and tax type {tax_type}, the tax number should be in format "NNNNNNNNNNN"'
+        if tax_type != 'IT0' and tax_type != 'IT1' and tax_type != 'IT2':
+            error = f'For country {country} the tax type values admitted are "IT0", "IT1" and "IT2"'
+    if country == 'NG':
+        if tax_type != 'NG1' and tax_type != 'NG3' and tax_type != 'NG4':
+            error = f'For country {country} the tax type values admitted are "NG1", "NG3" and "NG4"'
+
+    return error
+
+def bank_check (sheet: str, bank_country: str, bank_key: str, bank_acc_number: str = '', bank_cont_key: str = '', iban: str = ''):
+    error = ''
+    if bank_country == 'IT' or bank_country == 'FR' :
+        if not re.compile(r'^\d{10}$').match(bank_key):
+            error = f'For country {bank_country} the bank key should be in format "NNNNNNNNNN". '
+
+    elif bank_country == 'ES' or bank_country == 'DE':
+        if not re.compile(r'^\d{8}$').match(bank_key):
+            error = f'For country {bank_country} the bank key should be in format "NNNNNNNN". '
+
+    elif bank_country == 'BE' or bank_country == 'LU':
+        if not re.compile(r'^\d{3}$').match(bank_key):
+            error = f'For country {bank_country} the bank key should be in format "NNN". '
+
+    elif bank_country == 'FI' or bank_country == 'GB' or bank_country == 'IE':
+        if not re.compile(r'^\d{6}$').match(bank_key):
+            error = f'For country {bank_country} the bank key should be in format "NNNNNN". '
+
+    elif bank_country == 'CH':
+        if not re.compile(r'^\d{5}$').match(bank_key):
+            error = f'For country {bank_country} the bank key should be in format "NNNNN". '
+    
+    if sheet == 'Bank Details':
+        if bank_country == 'IT':
+            if not re.compile(r'^\d{12}$').match(bank_acc_number):
+                error += f'For country {bank_country} the bank account number should be in format "NNNNNNNNNNNN". '
+            if not re.compile(r'^[A-Z]{1}$').match(bank_cont_key):
+                error += f'For country {bank_country} the bank control key should be in format "A". '
+            if not re.compile(fr'^IT\d{{2}}{re.escape(bank_cont_key)}{re.escape(bank_key)}{re.escape(bank_acc_number)}$').match(iban):
+                error += 'Based on other data the IBAN is not correct; check it using IBAN transaction in this program'
+        
+        elif bank_country == 'ES':
+            if not re.compile(r'^\d{10}$').match(bank_acc_number):
+                error += f'For country {bank_country} the bank account number should be in format "NNNNNNNNNN". '
+            if not re.compile(r'^\d{2}$').match(bank_cont_key):
+                error += f'For country {bank_country} the bank control key should be in format "NN". '
+            if not re.compile(fr'^ES\d{{2}}{re.escape(bank_key)}{re.escape(bank_cont_key)}{re.escape(bank_acc_number)}$').match(iban):
+                error += 'Based on other data the IBAN is not correct; check it using IBAN transaction in this program'
+            
+        elif bank_country == 'BE':
+            if not re.compile(fr'^{re.escape(bank_key)}-\d{{7}}-{re.escape(bank_cont_key)}$').match(bank_acc_number):
+                error += f'For country {bank_country} the bank account number should be in format "NNN-NNNNNNN-NN". '
+            if not re.compile(r'^\d{2}$').match(bank_cont_key):
+                error += f'For country {bank_country} the bank control key should be in format "NN". '
+            if not re.compile(fr'^BE\d{{2}}{re.escape(bank_key)}\d{{7}}{re.escape(bank_cont_key)}$').match(iban):
+                error += 'Based on other data the IBAN is not correct; check it using IBAN transaction in this program'
+
+        elif bank_country == 'FR':
+            if not re.compile(r'^[A-Z0-9]{11}$').match(bank_acc_number):
+                error += f'For country {bank_country} the bank account number should be in format "XXXXXXXXXXX". '
+            if not re.compile(r'^\d{2}$').match(bank_cont_key):
+                error += f'For country {bank_country} the bank control key should be in format "NN". '
+            if not re.compile(fr'^FR\d{{2}}{re.escape(bank_key)}{re.escape(bank_acc_number)}{re.escape(bank_cont_key)}$').match(iban):
+                error += 'Based on other data the IBAN is not correct; check it using IBAN transaction in this program'
+
+        elif bank_country == 'NL':
+            if not re.compile(r'^\d{10}$').match(bank_acc_number):
+                error += f'For country {bank_country} the bank account number should be in format "NNNNNNNNNN". '
+            if bank_cont_key != 'nan':
+                error += f'For country {bank_country} the bank control key should be blank. '
+            if not re.compile(fr'^NL\d{{2}}[A-Z]{{4}}{re.escape(bank_acc_number)}$').match(iban):
+                error += 'Based on other data the IBAN is not correct; check it using IBAN transaction in this program'
+
+        elif bank_country == 'FI':
+            if not re.compile(r'^\d{7}$').match(bank_acc_number):
+                error += f'For country {bank_country} the bank account number should be in format "NNNNNNN". '
+            if not re.compile(r'^\d{1}$').match(bank_cont_key):
+                error += f'For country {bank_country} the bank control key should be in format "N". '
+            if not re.compile(fr'^FI\d{{2}}{re.escape(bank_key)}{re.escape(bank_acc_number)}{re.escape(bank_cont_key)}$').match(iban):
+                error += 'Based on other data the IBAN is not correct; check it using IBAN transaction in this program'
+
+        elif bank_country == 'LU':
+            if not re.compile(r'^\d{13}$').match(bank_acc_number):
+                error += f'For country {bank_country} the bank account number should be in format "NNNNNNNNNNNNN". '
+            if bank_cont_key != 'nan':
+                error += f'For country {bank_country} the bank control key should be blank. '
+            if not re.compile(fr'^LU\d{{2}}{re.escape(bank_key)}{re.escape(bank_acc_number)}$').match(iban):
+                error += 'Based on other data the IBAN is not correct; check it using IBAN transaction in this program'
+
+        elif bank_country == 'CH':
+            if not re.compile(r'^\d{12}$').match(bank_acc_number):
+                error += f'For country {bank_country} the bank account number should be in format "NNNNNNNNNNNN". '
+            if bank_cont_key != 'nan':
+                error += f'For country {bank_country} the bank control key should be blank. '
+            if not re.compile(fr'^CH\d{{2}}{re.escape(bank_key)}{re.escape(bank_acc_number)}$').match(iban):
+                error += 'Based on other data the IBAN is not correct; check it using IBAN transaction in this program'
+
+        elif bank_country == 'GB' or bank_country == 'IE':
+            if not re.compile(r'^\d{8}$').match(bank_acc_number):
+                error += f'For country {bank_country} the bank account number should be in format "NNNNNNNN". '
+            if bank_cont_key != 'nan':
+                error += f'For country {bank_country} the bank control key should be blank. '
+            if not re.compile(fr'^{re.escape(bank_country)}\d{{2}}[A-Z]{{4}}{re.escape(bank_key)}{re.escape(bank_acc_number)}$').match(iban):
+                error += 'Based on other data the IBAN is not correct; check it using IBAN transaction in this program'
+
+        elif bank_country == 'DE':
+            if not re.compile(r'^\d{10}$').match(bank_acc_number):
+                error += f'For country {bank_country} the bank account number should be in format "NNNNNNNNNN". '
+            if bank_cont_key != 'nan':
+                error += f'For country {bank_country} the bank control key should be blank. '
+            if not re.compile(fr'^DE\d{{2}}{re.escape(bank_key)}{re.escape(bank_acc_number)}$').match(iban):
+                error += 'Based on other data the IBAN is not correct; check it using IBAN transaction in this program'
+
+        elif bank_country == 'NG':
+            if bank_cont_key != 'nan':
+                error = f'For country {bank_country} the bank control key should be blank. '
+            if iban != 'nan':
+                error += f'For country {bank_country} the IBAN should be blank'
 
     return error

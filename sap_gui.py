@@ -520,6 +520,9 @@ class MigrationFile:
                         elif self.mode.variable.get() == 'Supplier':
                             if column_tech_names[column] not in customizing.mf_supplier_general_data:
                                 column_names.append(column_list[column].split('\n')[0])
+                        elif self.mode.variable.get() == 'FI - Accounts receivable open item' or self.mode.variable.get() == 'FI - Accounts payable open item':
+                            if column_tech_names[column] not in customizing.mf_bp_open_items:
+                                column_names.append(column_list[column].split('\n')[0])
                         else:
                             column_names.append(column_list[column].split('\n')[0])
 
@@ -530,7 +533,7 @@ class MigrationFile:
                     column = 0
                     new_line = 0
                     for a in range(maximum_field):
-                        if a == 10 or a == 20 or a == 30 or a == 40 or a == 50:
+                        if a == 8 or a == 16 or a == 24 or a == 32 or a == 40 or a == 48:
                             new_line += 4
                             column = 0
                         sheet_list[b].field_list[a].label.label.config(text = column_names[a].replace("*", "").replace("+", ""))
@@ -595,6 +598,9 @@ class MigrationFile:
                     elif self.mode.variable.get() == 'Supplier':
                         if column_tech_names[column] not in customizing.mf_supplier_general_data:
                             column_names.append((column_list[column].split('\n')[0], column))
+                    elif self.mode.variable.get() == 'FI - Accounts receivable open item' or self.mode.variable.get() == 'FI - Accounts payable open item':
+                        if column_tech_names[column] not in customizing.mf_bp_open_items:
+                            column_names.append((column_list[column].split('\n')[0], column))
                     else:
                         column_names.append((column_list[column].split('\n')[0], column))
 
@@ -620,6 +626,15 @@ class MigrationFile:
                                     if str(all_rows[row]) != 'nan' or type(all_rows[row]) != float:
                                         self.error_list.append((a[0], 'W001', row + 2 , column_list[n].split('\n')[0].replace("*", "").replace("+", ""), 'This field is not blank, but is in a column not considered in this analysis'))
 
+                elif (self.mode.variable.get() == 'FI - Accounts receivable open item' and a[0] == 'Customer Open Items') or (self.mode.variable.get() == 'FI - Accounts payable open item' and a[0] == 'Vendor Open Items'):
+                    for n in range(len(column_tech_names)):
+                        all_rows = df.iloc[:, n].tolist()
+                        if column_tech_names[n] in customizing.mf_bp_open_items:
+                            for row in range(len(all_rows)):
+                                if row >= 7:
+                                    if str(all_rows[row]) != 'nan' or type(all_rows[row]) != float:
+                                        self.error_list.append((a[0], 'W001', row + 2 , column_list[n].split('\n')[0].replace("*", "").replace("+", ""), 'This field is not blank, but is in a column not considered in this analysis'))
+
                 for b in range(maximum_field):
                     rows = df.iloc[:, column_names[b][1]].tolist()
                     if sheet_list[a[1]].field_list[b].variable.get() == 'Mandatory':
@@ -629,7 +644,7 @@ class MigrationFile:
                         for row in range(len(rows)):
                             if row >= 7:
                                 if str(rows[row]) == 'nan' and type(rows[row]) == float:
-                                    self.error_list.append((a[0], 'E001', row + 2 , sheet_list[a[1]].field_list[b].label_text, 'This mandatory field is blank'))
+                                    self.error_list.append((a[0], 'E001', row + 2 , sheet_list[a[1]].field_list[b].label_text.replace("*", "").replace("+", ""), 'This mandatory field is blank'))
                     
                     elif sheet_list[a[1]].field_list[b].variable.get() == 'Optional':
                         self.present_fields.append((a[0], sheet_list[a[1]].field_list[b].label_text, column_names[b][1], b))
@@ -640,7 +655,7 @@ class MigrationFile:
                         for row in range(len(rows)):
                             if row >= 7:
                                 if str(rows[row]) != 'nan' or type(rows[row]) != float:
-                                    self.error_list.append((a[0], 'E002', row + 2 , sheet_list[a[1]].field_list[b].label_text, 'This not required field is filled'))
+                                    self.error_list.append((a[0], 'E002', row + 2 , sheet_list[a[1]].field_list[b].label_text.replace("*", "").replace("+", ""), 'This not required field is filled'))
 
             self.tab.select(0)
 
@@ -660,6 +675,11 @@ class MigrationFile:
             bp_code_tax = []
             tax_type = []
             tax_number = []
+            bank_country = []
+            bank_key = []
+            bank_acc_number = []
+            bank_cont_key = []
+            iban = []
             for a in self.sheet_names_list:
                 key_field_list_1 =[]
                 key_field_list_2 =[]
@@ -763,12 +783,16 @@ class MigrationFile:
                                 if self.mode.variable.get() == 'Customer':
                                     if rows[3] == 'PARVW' and str(rows[row]) not in customizing.mf_partner_function_customer:
                                         self.error_list.append((a[0], 'E012', row + 2 , sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), 'In this field the standard acceptable values are "AG", "RE", "RG", "WE" and "ZM"'))
+                                
                                 elif self.mode.variable.get() == 'Supplier':
                                     if rows[3] == 'PARVW' and str(rows[row]) not in customizing.mf_partner_function_supplier:
                                         self.error_list.append((a[0], 'E012', row + 2 , sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), 'In this field the standard acceptable values are "LF", "WL", "BA", "RS" and "ZM"'))
                                     if (rows[3] == 'WT_SUBJCT' or rows[3] == 'WEBRE') and str(rows[row]) != 'X':
                                         self.error_list.append((a[0], 'E012', row + 2 , sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), 'In this field the standard acceptable value is "X"'))
 
+                                elif self.mode.variable.get() == 'FI - Accounts receivable open item' or self.mode.variable.get() == 'FI - Accounts payable open item':
+                                    if rows[3] == 'ZLSPR'  and str(rows[row]) != 'X':
+                                        self.error_list.append((a[0], 'E012', row + 2 , sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), 'In this field the standard acceptable value is "X"'))
 
                             #to track all the key fields information
                             if b[1] < key_counter:
@@ -792,6 +816,18 @@ class MigrationFile:
                                 elif rows[3] == 'COUNTRY':
                                     country.append(str(rows[row]))
                             
+                            elif a[0] == 'Bank Master' or a[0] == 'Bank Details':
+                                if rows[3] == 'BANKS':
+                                    bank_country.append(str(rows[row]))
+                                elif rows[3] == 'BANKL':
+                                    bank_key.append(str(rows[row]))
+                                elif rows[3] == 'BANKN':
+                                    bank_acc_number.append(str(rows[row]))
+                                elif rows[3] == 'IBAN':
+                                    iban.append(str(rows[row]))
+                                elif rows[3] == 'BKONT':
+                                    bank_cont_key.append(str(rows[row]))
+                            
                             elif a[0] == 'Tax Numbers' and (self.mode.variable.get() == 'Customer' or self.mode.variable.get() == 'Supplier'):
                                 if rows[3] == 'KUNNR' or rows[3] == 'LIFNR':
                                     bp_code_tax.append(str(rows[row]))
@@ -803,19 +839,38 @@ class MigrationFile:
                                     tax_number.append(str(rows[row]))
 
                 if a[0] == 'General Data':
-                    for w in range(len(country)):
-                        error_postal_code = customizing.postal_code_check(postal_code[w], country[w])
-                        if error_postal_code != '':
-                            self.error_list.append((a[0], 'W002', w + 9 , 'Postal Code', f'The postal code is mandatory by standard for {country[w]}; check OY17 t-code. ' + error_postal_code))
+                    if postal_code != []:
+                        for w in range(len(country)):
+                            if country[w] in customizing.mf_postal_code_country:
+                                error_postal_code = customizing.postal_code_check(postal_code[w], country[w])
+                                if error_postal_code != '':
+                                    self.error_list.append((a[0], 'W002', w + 9 , 'Postal Code', f'The postal code is mandatory by standard for {country[w]}; check OY17 t-code. ' + error_postal_code))
+                            else:
+                                self.error_list.append((a[0], 'W003', w + 9 , 'Postal Code', f'The postal code for {country[w]} is not analyzed in this program; check OY17 t-code'))
                 elif a[0] == 'Tax Numbers':
                     if self.mode.variable.get() == 'Customer' or self.mode.variable.get() == 'Supplier':
                         for w in range(len(bp_code)):
                             for x in range(len(bp_code_tax)):
                                 if bp_code[w] == bp_code_tax[x]:
-                                    error_vat = customizing.vat_check(tax_type[x], tax_number[x], country[w])
-                                    if error_vat != '':
-                                        self.error_list.append((a[0], 'W003', x + 9 , 'Tax Number', error_vat))
+                                    if country[w] in customizing.mf_vat_country:
+                                        error_vat = customizing.vat_check(tax_type[x], tax_number[x], country[w])
+                                        if error_vat != '':
+                                            self.error_list.append((a[0], 'W004', x + 9 , 'Tax Number', error_vat))
+                                    else:
+                                        self.error_list.append((a[0], 'W005', x + 9 , 'Tax Number', f'The VAT number for {country[w]} is not analyzed in this program'))
 
+
+                elif a[0] == 'Bank Master' or a[0] == 'Bank Details':
+                    for y in range(len(bank_country)):
+                        if bank_country[y] in customizing.mf_bank_country:
+                            if a[0] == 'Bank Master':
+                                error_bank = customizing.bank_check(a[0], bank_country[y], bank_key[y])
+                            else:
+                                error_bank = customizing.bank_check(a[0], bank_country[y], bank_key[y], bank_acc_number[y], bank_cont_key[y], iban[y])
+                            if error_bank != '':
+                                self.error_list.append((a[0], 'W006', y + 9 , '', error_bank + '; check 0Y17 t-code'))
+                        else:
+                            self.error_list.append((a[0], 'W007', y + 9 , '', f'The bank data for {bank_country[y]} is not analyzed in this program; check OY17 t-code'))
 
                 for c in range(int(len(key_field_list_1)/key_counter)):
                     counter = 0
