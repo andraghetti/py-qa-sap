@@ -174,7 +174,7 @@ class Frame ():
             elif left_or_right.upper() == 'L':
                 self.frame.pack(fill = tkinter.BOTH, expand = tkinter.TRUE, side = 'left')
             else:
-                self.frame.pack(fill = tkinter.BOTH, expand = tkinter.TRUE)
+                self.frame.pack(fill = tkinter.BOTH)
         else:
             self.frame.grid(column = column, row = row, sticky = sticky, columnspan = col_span, rowspan = row_span)
             self.frame.columnconfigure(0, weight=1)  # Ensure column 0 expands
@@ -182,20 +182,20 @@ class Frame ():
 class Button ():
     def __init__ (
         self,
-        frame: None,
-        text: str = '',
-        command: None = '',
-        image: None = '',
+        frame: tkinter.Frame,
+        text: str,
+        command = '',
         width: int = 0,
         height:int = 0,
-        dimension: int = 12,
-        x: int = 0,
-        y: int = 0,
-        anchor: str = 'nw',
-        bordermode: str = 'inside'
+        column:int = 0,
+        row:int = 0,
+        padx:int = 0,
+        pady:int = 0,
+        sticky:str = tkinter.W,
+        dimension: int = 12
     ):
-        self.button = tkinter.Button(frame, text = text, image = image, command = command, width = width, height = height, background = '#D8E6EC', font = ('Calibri', dimension, 'bold'))
-        self.button.place (x = x, y = y, anchor = anchor, bordermode = bordermode)
+        self.button = tkinter.Button(frame, text = text, command = command, width = width, height = height, background = '#D8E6EC', font = ('Calibri', dimension, 'bold'))
+        self.button.grid(column = column, row = row, padx = padx, pady = pady, sticky = sticky)
 
 class Label ():
     def __init__ (
@@ -203,28 +203,44 @@ class Label ():
         frame: None,
         text: str,
         dimension: int = 13,
-        justify = tkinter.LEFT,
-        foreground: str = 'black',
         wraplength: int = 1000,
-        x: int = 0,
-        y: int = 0,
-        anchor: str = 'nw',
-        bordermode: str = 'inside'        
+        column: int = 0,
+        row:int = 0,
+        padx: int = 0,
+        pady:int = 0,
+        sticky: str = '',
+        justify = tkinter.CENTER,
+        foreground: str = 'black',
+        columnspan: int = 1
     ):
         self.label = tkinter.Label(frame, text = text, font = ('Calibri', dimension), justify = justify, background = '#F0F8FF', foreground = foreground, wraplength = wraplength)
-        self.label.place (x = x, y = y, anchor = anchor, bordermode = bordermode)
+        self.label.grid(column = column, row = row, padx = padx, pady = pady, sticky = sticky, columnspan = columnspan)
 
 class Entry ():
     def __init__ (
         self,
         frame: None,
+        text: str = '',
+        column: int = 0,
+        row:int = 0,
+        label_padx:int = 0,
+        label_pady:int = 0,
         width:int = 0,
-        x: int = 0,
-        y: int = 0,
+        entry_padx:int = 0,
+        entry_pady:int = 0,
+        columnspan: int = 1
     ):
+        self.label = Label (
+            frame = frame, 
+            text = text,
+            column = column,
+            row = row,
+            padx = label_padx,
+            pady = label_pady
+            )
         self.stringvar = tkinter.StringVar()
         self.entry = tkinter.Entry(frame, text = self.stringvar, width = width)
-        self.entry.place (x = x, y = y)
+        self.entry.grid(column = column+1, row = row, padx = entry_padx, pady = entry_pady, columnspan = columnspan)
 
 class Combobox ():
     def __init__ (
@@ -233,14 +249,16 @@ class Combobox ():
         command = '',
         values = '',
         width: int = 12,
-        x: int = 0,
-        y: int = 0,
-        anchor: str = 'nw',
-        bordermode: str = 'inside'
+        column:int = 1,
+        row:int = 0,
+        padx:int = 10,
+        pady:int = 5,
+        columnspan: int = 1,
+        sticky: str = ''
     ):
         self.text = tkinter.StringVar()
         self.combobox = ttk.Combobox(frame, textvariable = self.text, state = 'readonly', values = values, width = width)
-        self.combobox.place (x = x, y = y, anchor = anchor, bordermode = bordermode)
+        self.combobox.grid(column = column, row = row, padx = padx, pady = pady, sticky = sticky, columnspan = columnspan)
         self.combobox.bind("<<ComboboxSelected>>", command)
 
 class Checkbox ():
@@ -249,14 +267,15 @@ class Checkbox ():
         frame: None,
         text: str = '',
         command = '',
-        x: int = 0,
-        y: int = 0,
-        anchor: str = 'nw',
-        bordermode: str = 'inside'
+        column:int = 0,
+        row:int = 0,
+        sticky: str = '',
+        columnspan: int = 1
     ):
+        self.text = text
         self.variable = tkinter.IntVar()
-        self.checkbox = tkinter.Checkbutton(frame, text = text, variable = self.variable, command = command, background = '#F0F8FF')
-        self.checkbox.place (x = x, y = y, anchor = anchor, bordermode = bordermode)
+        self.checkbox = tkinter.Checkbutton(frame, text = self.text, variable = self.variable, command = command, background = '#F0F8FF')
+        self.checkbox.grid(column = column, row = row, sticky = sticky, columnspan = columnspan)
 
 class MenuBar ():
     def __init__ (
@@ -280,9 +299,8 @@ class Treeview():
         self,
         frame: tkinter.Frame,
         col_text: list,
-        width_list: list,
-        lst: list,
-        dist: int = 0
+        width_list : list,
+        lst: list
     ):
         def select_all():
             # Get all item IDs in the Treeview
@@ -290,7 +308,8 @@ class Treeview():
 
             # Select all items
             self.tree.selection_set(item_ids)
-            on_copy(event=True)
+            
+            on_copy(event = True)
 
         def on_copy(event):
             selected_items = self.tree.selection()
@@ -305,32 +324,42 @@ class Treeview():
 
         self.frame = frame
 
-        self.tree = ttk.Treeview(self.frame, columns=col_text, show='headings', height=len(lst))
+        self.frame_1 = Frame (
+            root = self.frame,
+            pack_or_grid = 'P'
+        )
+        self.frame_2 = Frame (
+            root = self.frame,
+            pack_or_grid = 'P'
+        )
+
+        self.tree = ttk.Treeview(self.frame_2.frame, columns=col_text, show='headings', height=len(lst))
         for a in range(len(col_text)):
             self.tree.heading(col_text[a], text=col_text[a])
             self.tree.column(col_text[a], width=width_list[a])
         for b in lst:
             self.tree.insert('', tkinter.END, values=b)
 
+
         # Add a horizontal scrollbar
-        self.x_scrollbar = ttk.Scrollbar(self.frame, orient='horizontal', command=self.tree.xview)
-        self.x_scrollbar.place(x=10, y=750, width=1500)
+        self.x_scrollbar = ttk.Scrollbar(self.frame_2.frame, orient='horizontal', command=self.tree.xview)
+        self.x_scrollbar.pack(fill="x")
         self.tree.configure(xscrollcommand=self.x_scrollbar.set)
 
-        # Add a vertical scrollbar
-        self.y_scrollbar = ttk.Scrollbar(self.frame, orient='vertical', command=self.tree.yview)
-        self.y_scrollbar.place(x=1510, y=70 + dist, height=680 - dist)
-        self.tree.configure(yscrollcommand=self.y_scrollbar.set)
+        self.tree.pack(side="left", fill="both", expand=True)
 
-        self.tree.place(x=10, y=70 + dist, width=1500, height=680 - dist)
+        # Add a vertical scrollbar
+        self.y_scrollbar = ttk.Scrollbar(self.frame_2.frame, orient='vertical', command=self.tree.yview)
+        self.y_scrollbar.pack(side="right", fill="y")
+        self.tree.configure(yscrollcommand=self.y_scrollbar.set)
 
         self.tree.bind("<Control-c>", on_copy)
 
         first_item = self.tree.get_children()[0]
         self.tree.selection_set(first_item)
 
-        self.select_all_button = tkinter.Button(self.frame, text='Select All and Copy', command=select_all, background='#D8E6EC', font=('Calibri', 12, 'bold'))
-        self.select_all_button.place(x=10, y=10, width=200, height=30)
+        self.select_all_button = tkinter.Button (self.frame_1.frame, text = 'Select All and Copy', command = select_all, background = '#D8E6EC', font = ('Calibri', 12, 'bold'))
+        self.select_all_button.grid(column = 0, row = 0, sticky = tkinter.E, pady=10)
 
 class RadioButton_2 ():
     def __init__ (
@@ -341,19 +370,19 @@ class RadioButton_2 ():
         text_2: str = '',
         command = '',
         dimension: int = 8,
-        x: int = 0,
-        y: int = 0
+        row: int = 0,
+        column: int = 0
     ):
         self.label_text = label_text
         self.text_1 = text_1
         self.text_2 = text_2
-        self.label = Label (frame, text = label_text, x = x, y = y, dimension = dimension + 2)
+        self.label = Label (frame, text = label_text, row = row, column = column, dimension = dimension + 2)
         self.label.label.config(foreground='#191970')
         self.variable = tkinter.StringVar()
         self.radiobutton_1 = tkinter.Radiobutton (frame, text = text_1, variable = self.variable, value = text_1, command = command, font = ('Calibri', dimension), background = '#F0F8FF')
-        self.radiobutton_1.place(x = x, y = y + 50)
+        self.radiobutton_1.grid(row = row + 1, column = column, sticky = tkinter.W)
         self.radiobutton_2 = tkinter.Radiobutton (frame, text = text_2, variable = self.variable, value = text_2, command = command, font = ('Calibri', dimension), background = '#F0F8FF')
-        self.radiobutton_2.place(x = x, y = y + 100)
+        self.radiobutton_2.grid(row = row + 2, column = column, sticky = tkinter.W)
 
 class RadioButton_3 (RadioButton_2):
     def __init__ (
@@ -365,8 +394,8 @@ class RadioButton_3 (RadioButton_2):
         text_3: str = '',
         command = '',
         dimension: int = 9,
-        x: int = 0,
-        y: int = 0
+        row: int = 0,
+        column: int = 0
     ):
         super ().__init__(
             frame,
@@ -375,12 +404,12 @@ class RadioButton_3 (RadioButton_2):
             text_2,
             command,
             dimension,
-            x,
-            y
+            row,
+            column
         )
         self.text_3 = text_3
-        self.radiobutton_3 = tkinter.Radiobutton (frame, text = text_3, variable = self.variable, value = text_3, command = command, font = ('Calibri', dimension), background = '#F0F8FF')
-        self.radiobutton_3.place(x = x, y = y + 150)
+        self.radiobutton_3 = tkinter.Radiobutton (frame, text = text_3, variable = self.variable, value = text_3, command = command,font = ('Calibri', dimension), background = '#F0F8FF')
+        self.radiobutton_3.grid(row = row + 3, column = column)
         self.text_input = tkinter.Text(frame, height = 37, width = 15)
 
 class ScrollableFrame(tkinter.Frame):
@@ -402,7 +431,7 @@ class ScrollableFrame(tkinter.Frame):
         self.h_scrollbar.pack(side="bottom", fill="x")
 
         # Add the inner frame to the canvas
-        self.canvas.create_window((0, 0), window=self.inner_frame, anchor="nw", height=680, width = 4000)
+        self.canvas.create_window((0, 0), window=self.inner_frame, anchor="nw")
 
         # Configure the canvas to update the scroll region when the frame size changes
         self.inner_frame.bind("<Configure>", self.on_inner_frame_configure)
@@ -418,6 +447,15 @@ class ScrollableFrame(tkinter.Frame):
         # Handle mousewheel scrolling
     #    if event.delta:
     #        self.canvas.xview_scroll(int(-1 * (event.delta / 120)), "units")
+
+    def add_widget(self, widget, **kwargs):
+        # Add a widget to the inner frame
+        widget.grid(**kwargs)
+
+    def add_widgets(self, *widgets):
+        # Add multiple widgets to the inner frame
+        for widget in widgets:
+            widget.grid()
 
 class Sheet ():
     def __init__ (

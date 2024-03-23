@@ -6,10 +6,8 @@ import pandas as pd
 from datetime import datetime
 import tkinter.messagebox
 from PIL import Image, ImageTk
-from openpyxl import load_workbook
-from openpyxl.styles import Color
 
-import customizing
+import test2 as customizing
 
 def quit_window (window: tkinter.Tk):
     #quit_message = tkinter.messagebox.askyesnocancel(title='Warning', message='Are you sure you want to quit?')
@@ -33,9 +31,9 @@ def start (program: str, frame: tkinter.Frame):
     else:
         MigrationFile (frame = frame)
 
-def tab_creation (frame, x: int, y: int, width: int = 1000, height: int = 800, anchor: str = 'nw', bordermode: str = 'inside'):
+def tab_creation (frame):
     tab = ttk.Notebook(frame)
-    tab.place (x = x, y = y, width = width, height = height, anchor = anchor, bordermode = bordermode)
+    tab.pack(fill = tkinter.BOTH, expand = tkinter.TRUE, side = 'left')
     return tab
 
 def browse_file(entry_path: customizing.Entry):
@@ -99,13 +97,13 @@ def create_excel_file(sheet_names_list: list, present_fields: list):
 def migration_forget (sheet_list: list, sheet: str):
     for a in sheet_list:
         if sheet != 'No':
-            a.sheet.checkbox.place_forget() 
+            a.sheet.checkbox.grid_forget() 
         a.main_frame.frame.pack_forget()
         for b in a.field_list:
-            b.label.label.place_forget()
-            b.radiobutton_1.place_forget()
-            b.radiobutton_2.place_forget()
-            b.radiobutton_3.place_forget() 
+            b.label.label.grid_forget()
+            b.radiobutton_1.grid_forget()
+            b.radiobutton_2.grid_forget()
+            b.radiobutton_3.grid_forget() 
 
 def info (type: str):
     Info (type = type)
@@ -127,15 +125,19 @@ class Info:
             frame = self.frame.frame,
             text = type,
             dimension = 24,
-            x = 10,
-            y = 10
+            padx = 20,
+            pady = 10,
+            sticky = tkinter.NW
         )
 
         self.main_label = customizing.Label (
             frame = self.frame.frame,
             text = '',
-            x = 10,
-            y = 70
+            row = 1,
+            padx = 10,
+            pady = 10,
+            sticky = tkinter.NW,
+            justify = tkinter.LEFT
         )
 
         if type == 'EBS MT940 info':
@@ -159,9 +161,10 @@ class MainRoot:
              frame = self.frame,
              text = 'SAP HELPER',
              dimension = 40,
+             sticky = tkinter.NS,
              foreground = '#229F22',
-             x = 650,
-             y = 30,
+             pady = 30,
+             padx = 650
         )
         customizing.Button (
             frame = self.frame,
@@ -169,26 +172,29 @@ class MainRoot:
             command = lambda: start('ebs_mt940', self.frame),
             width = 15,
             height = 3,
-            x = 10,
-            y = 130
+            row = 1,
+            pady = 10,
+            padx = 10
         )
         customizing.Button (
             frame = self.frame,
             text = 'IBAN',
             command = lambda: start('iban', self.frame),
             width = 15,
-            height = 3,
-            x = 10,
-            y = 220
+            height = 3,  
+            row = 2,
+            pady = 10,
+            padx = 10
         )
         customizing.Button (
             frame = self.frame,
             text = 'Migration File',
             command = lambda: start('migration_file', self.frame),
             width = 15,
-            height = 3,
-            x = 10,
-            y = 310
+            height = 3,                       
+            row = 3,
+            pady = 10,
+            padx = 10
         )
         
 class Ebs:
@@ -290,17 +296,17 @@ class Ebs:
             )
 
             check = float(opening_balance) + total_credit + total_debit - float(closing_balance)
-            image_path = 'green_tick.png'
+            image_path = 'C:\\Users\\scham\\OneDrive\\Desktop\\SAP HELPER\\Icon\\green_tick.png'
             if round(check, 2) != 0:
-                image_path = 'red_cross.png'
+                image_path = 'C:\\Users\\scham\\OneDrive\\Desktop\\SAP HELPER\\Icon\\red_cross.png'
 
             # Open the image using Pillow
             image = Image.open(image_path)
             # Convert the image to a format Tkinter supports
             icon_check = ImageTk.PhotoImage(image)
 
-            label_with_icon = tkinter.Label(tree.frame, image=icon_check, text="CHECK: ", compound=tkinter.RIGHT, font = ('Calibri', 14, 'bold'), background = '#F0F8FF')
-            label_with_icon.place (x = 600, y = 10)
+            label_with_icon = tkinter.Label(tree.frame_1.frame, image=icon_check, text="CHECK: ", compound=tkinter.RIGHT, font = ('Calibri', 14, 'bold'), background = '#F0F8FF')
+            label_with_icon.grid(column=1, row=0, padx=200, pady=10)
 
             # Keep a reference to the image to prevent it from being garbage collected
             label_with_icon.image = icon_check
@@ -311,8 +317,8 @@ class Ebs:
         entry_path = customizing.Entry(
             frame = self.frame,
             width = 80,
-            x = 150,
-            y = 20
+            column = 1,
+            entry_pady = 10
             )
 
         #button to upload the .txt file
@@ -320,16 +326,15 @@ class Ebs:
             frame = self.frame, 
             text = "Upload .txt file", 
             command = lambda: (browse_file (entry_path=entry_path), read_file (entry_path=entry_path, text=self.text)),
-            x = 10,
-            y = 10
+            pady = 10
             )
 
         #text field. It is automatically filled uploading the file. It's also possible to paste here the .txt file content directly
         self.text = tkinter.Text(self.frame, height=44, width=100)
-        self.text.place(x = 10, y = 70, width = 800, height = 680)
+        self.text.grid(row=2, column=0, padx=10, pady=10, columnspan=3)
 
         self.y_scrollbar = ttk.Scrollbar(self.frame, orient='vertical', command=self.text.yview)
-        self.y_scrollbar.place(x = 810, y = 70, height = 680)
+        self.y_scrollbar.grid(row = 2, column = 3, sticky = 'NS')
         self.text.configure(yscrollcommand=self.y_scrollbar.set)
 
         #button to analyze the file content (a Trevieew will be opened)
@@ -337,8 +342,7 @@ class Ebs:
             frame = self.frame, 
             text = "Analysis", 
             command = ebs_analysis,
-            x = 700,
-            y = 10
+            column = 3
             )
 
 class Iban:
@@ -384,7 +388,7 @@ class Iban:
                     elif bank_country == 'BE':
                         bank_key = line[4:7]
                         bank_account_number = line[4:7] + '-' + line[7:14] + '-' + line[14:16]
-                        notes = 'For belgian banks, it needs to enter in bank account number:- "BANK_KEY-BANK_ACCOUNT_NUMBER-BANK_CONTROL_KEY"'
+                        notes = 'For belgian banks, it needs to enter in bank acount number:- "BANK_KEY-BANK_ACCOUNT_NUMBER-BANK_CONTROL_KEY"'
                     elif bank_country == 'FR':
                         bank_key = line[4:14]
                         bank_account_number = line[14:25]
@@ -433,10 +437,10 @@ class Iban:
 
         #IBAN view
         self.text = tkinter.Text(self.frame, height=44, width=100)
-        self.text.place(x = 10, y = 70, width = 800, height = 680)
+        self.text.grid(row=2, column=0, padx=10, pady=10, columnspan=3)
 
         self.y_scrollbar = ttk.Scrollbar(self.frame, orient='vertical', command=self.text.yview)
-        self.y_scrollbar.place(x = 810, y = 70, height = 680)
+        self.y_scrollbar.grid(row = 2, column = 3, sticky = 'NS')
         self.text.configure(yscrollcommand=self.y_scrollbar.set)
 
         #button to analyze the file content (a Trevieew will be opened)
@@ -444,8 +448,8 @@ class Iban:
             frame = self.frame, 
             text = "Analysis", 
             command = iban_analysis,
-            x = 700,
-            y = 10
+            column = 3,
+            pady = 10
             )
 
 class MigrationFile:
@@ -467,46 +471,23 @@ class MigrationFile:
                 for b in self.sheet_names_list:
                     df = pd.read_excel(self.entry_path.entry.get(), b[0])
 
-                    # Get the column technical names
-                    column_tech_names = df.iloc[3, :].tolist()
                     # Get the column names
                     column_list = df.iloc[6, :].tolist()
-                    column_names = []
-                    for column in range(len(column_list)): #if a specific mode is activated, then some fields will be excluded from analysis
-                        if self.mode.variable.get() == 'Customer':
-                            if column_tech_names[column] not in customizing.mf_customer_general_data and column_tech_names[column] not in customizing.mf_customer_company_data:
-                                column_names.append(column_list[column].split('\n')[0])
-                        elif self.mode.variable.get() == 'Supplier':
-                            if column_tech_names[column] not in customizing.mf_supplier_general_data:
-                                column_names.append(column_list[column].split('\n')[0])
-                        elif self.mode.variable.get() == 'FI - Accounts receivable open item' or self.mode.variable.get() == 'FI - Accounts payable open item':
-                            if column_tech_names[column] not in customizing.mf_bp_open_items:
-                                column_names.append(column_list[column].split('\n')[0])
-                        elif self.mode.variable.get() == 'FI - G/L account balance and open/line item':
-                            if column_tech_names[column] not in customizing.mf_gl_open_items:
-                                column_names.append(column_list[column].split('\n')[0])
-                        else:
-                            column_names.append(column_list[column].split('\n')[0])
-
-                    #only the first 50 fields will be included in the analysis (due to a program heaviness); this is the reason for which for specific mode some fields will be excluded
-                    maximum_field = len(column_names)
-                    if len(column_names) > 50:
-                        maximum_field = 50
-                    column = 5
+                    column = 0
                     new_line = 0
-                    for c in range(maximum_field):
-                        if c == 8 or c == 16 or c == 24 or c == 32 or c == 40 or c == 48:
-                            new_line += 100
-                            column = 5
-                        sheet_list[b[1]].field_list[c].text_input.place_forget()
-                        sheet_list[b[1]].field_list[c].label.label.place_forget()
-                        sheet_list[b[1]].field_list[c].label.label.place(x = column, y = new_line)
-                        sheet_list[b[1]].field_list[c].radiobutton_1.place(x = column, y = new_line + 20)
-                        sheet_list[b[1]].field_list[c].radiobutton_2.place(x = column, y = new_line + 40)
-                        sheet_list[b[1]].field_list[c].radiobutton_3.place(x = column, y = new_line + 60)
-                        column += 200
-                self.download_input_button.button.place_forget()
-                self.upload_input_button.button.place_forget()
+                    for c in range(len(column_list)):
+                        if c == 10 or c == 20 or c == 30 or c == 40 or c == 50:
+                            new_line += 4
+                            column = 0
+                        sheet_list[b[1]].field_list[c].text_input.grid_forget()
+                        sheet_list[b[1]].field_list[c].label.label.grid_forget()
+                        sheet_list[b[1]].field_list[c].label.label.grid(row = new_line + 0, column = column, sticky = tkinter.W, padx = 10)
+                        sheet_list[b[1]].field_list[c].radiobutton_1.grid(row = new_line + 1,column = column, sticky = tkinter.W, padx = 10)
+                        sheet_list[b[1]].field_list[c].radiobutton_2.grid(row = new_line + 2,column = column, sticky = tkinter.W, padx = 10)
+                        sheet_list[b[1]].field_list[c].radiobutton_3.grid(row = new_line + 3,column = column, sticky = tkinter.W, padx = 10)
+                        column += 1
+                self.download_input_button.button.grid_forget()
+                self.upload_input_button.button.grid_forget()
                 self.go_ahead.config(command = migration_input)
                 self.go_back.config(command = lambda: go_back('fields'))
 
@@ -555,7 +536,7 @@ class MigrationFile:
 
             for c in range(maximum_sheet):
                 if self.sheet_names[c] != 'Introduction' and self.sheet_names[c] != 'Field List':
-                    sheet_list[c].sheet.checkbox.place(x = 10, y = 25 + 24 * c)
+                    sheet_list[c].sheet.checkbox.grid(row = c + 1, sticky = tkinter.W)
                     sheet_list[c].sheet.checkbox.config(text = self.sheet_names[c])
             
                 for d in rows:
@@ -569,7 +550,7 @@ class MigrationFile:
                 if e in column_list[0]:
                     self.mode.radiobutton_1.config(command = lambda: mode_command('off'))
                     self.mode.radiobutton_2.config(text = e, value = e, command = lambda: mode_command('on'))
-                    self.mode_frame.place (x = 250, y = 100)
+                    self.mode_frame.frame.grid(column = 1, row = 1, rowspan = 100, columnspan = 5, sticky = tkinter.NW, padx = 50)
                     
             self.mode.variable.set('Generic')
             
@@ -579,99 +560,64 @@ class MigrationFile:
 
         def migration_fields ():
             migration_forget(sheet_list, 'No')
-            self.mode_frame.place_forget()
+            self.mode_frame.frame.grid_forget()
             self.sheet_names_list = []
             
-            self.tab.place(x = 220, y = 50, height=730, width=1300)
-
             for b in range(len(sheet_list)):
                 if sheet_list[b].sheet.variable.get() == 1: #only sheets ticked will be considered in the analysis
-                    column_color = []
-                    
+                    self.tab.grid(row = 1, column = 1, rowspan = 100, columnspan = 100, sticky = tkinter.NW)
                     self.tab.add(sheet_list[b].main_frame.frame, text = self.sheet_names[b])
 
                     df = pd.read_excel(self.entry_path.entry.get(), self.sheet_names[b])
-                    # You can add code here to extract cell colors using openpyxl
-                    wb = load_workbook(self.entry_path.entry.get())
-                    ws = wb[self.sheet_names[b]]
-                    row = ws[8]
-                    for cell in row:
-                        # Check cell fill color
-                        fill_color = cell.fill.start_color.index if cell.fill.start_color.rgb else None
-                        column_color.append((cell.column, fill_color))
-                    wb.close()
-                    # Now you have both dataframe (df) and cell color information
-                    # You can further process them according to your requirements
 
                     # Get the column names
                     column_tech_names = df.iloc[3, :].tolist()
                     column_list = df.iloc[6, :].tolist()
                     column_names = []
                     for column in range(len(column_list)): #if a specific mode is activated, then some fields will be excluded from analysis
-                        color = ''
                         if self.mode.variable.get() == 'Customer':
                             if column_tech_names[column] not in customizing.mf_customer_general_data and column_tech_names[column] not in customizing.mf_customer_company_data:
-                                for col in column_color:
-                                    if col[0] == column + 1:
-                                        color = col[1]
-                                column_names.append((column_list[column].split('\n')[0], color))
+                                column_names.append(column_list[column].split('\n')[0])
                         elif self.mode.variable.get() == 'Supplier':
                             if column_tech_names[column] not in customizing.mf_supplier_general_data:
-                                for col in column_color:
-                                    if col[0] == column + 1:
-                                        color = col[1]
-                                column_names.append((column_list[column].split('\n')[0], color))
+                                column_names.append(column_list[column].split('\n')[0])
                         elif self.mode.variable.get() == 'FI - Accounts receivable open item' or self.mode.variable.get() == 'FI - Accounts payable open item':
                             if column_tech_names[column] not in customizing.mf_bp_open_items:
-                                for col in column_color:
-                                    if col[0] == column + 1:
-                                        color = col[1]
-                                column_names.append((column_list[column].split('\n')[0], color))
+                                column_names.append(column_list[column].split('\n')[0])
                         elif self.mode.variable.get() == 'FI - G/L account balance and open/line item':
                             if column_tech_names[column] not in customizing.mf_gl_open_items:
-                                for col in column_color:
-                                    if col[0] == column + 1:
-                                        color = col[1]
-                                column_names.append((column_list[column].split('\n')[0], color))
+                                column_names.append(column_list[column].split('\n')[0])
                         else:
-                            for col in column_color:
-                                if col[0] == column + 1:
-                                    color = col[1]
-                            column_names.append((column_list[column].split('\n')[0], color))
+                            column_names.append(column_list[column].split('\n')[0])
 
-                    #only the first 50 fields will be included in the analysis (due to a program heaviness); this is the reason for which for specific mode some fields will be excluded
+                    #only the first 50 fields will be included in the analysis (due to a program heaviness); this is the reason for which for specific mode some fileds will be excluded
                     maximum_field = len(column_names)
                     if len(column_names) > 50:
                         maximum_field = 50
 
-                    column = 5
+                    column = 0
                     new_line = 0
                     for a in range(maximum_field):
                         if a == 8 or a == 16 or a == 24 or a == 32 or a == 40 or a == 48:
-                            new_line += 100
-                            column = 5
-                        label_text = column_names[a][0].replace("*", "").replace("+", "")
-                        if len(column_names[a][0]) > 25:
-                            label_text = column_names[a][0][:25]
-                        sheet_list[b].field_list[a].label.label.config(text = label_text)
-                        sheet_list[b].field_list[a].label_text = column_names[a][0]
-                        sheet_list[b].field_list[a].label.label.place(x = column, y = new_line)
-                        sheet_list[b].field_list[a].radiobutton_1.place(x = column, y = new_line + 20)
-                        sheet_list[b].field_list[a].radiobutton_2.place(x = column, y = new_line + 40)
-                        sheet_list[b].field_list[a].radiobutton_3.place(x = column, y = new_line + 60)
-                        if "*" in column_names[a][0] or column_names[a][1] == 'FF92D050':
+                            new_line += 4
+                            column = 0
+                        sheet_list[b].field_list[a].label.label.config(text = column_names[a].replace("*", "").replace("+", ""))
+                        sheet_list[b].field_list[a].label_text = column_names[a]
+                        sheet_list[b].field_list[a].label.label.grid(row = new_line + 0, column = column, sticky = tkinter.W, padx = 10)
+                        sheet_list[b].field_list[a].radiobutton_1.grid(row = new_line + 1,column = column, sticky = tkinter.W, padx = 10)
+                        sheet_list[b].field_list[a].radiobutton_2.grid(row = new_line + 2,column = column, sticky = tkinter.W, padx = 10)
+                        sheet_list[b].field_list[a].radiobutton_3.grid(row = new_line + 3,column = column, sticky = tkinter.W, padx = 10)
+                        if "*" in column_names[a]:
                             sheet_list[b].field_list[a].variable.set('Mandatory') #to have a default for mandatory fields
-                        elif "+" in column_names[a][0] or column_names[a][1] == 'FFFFFF00':
+                        elif "+" in column_names[a]:
                             sheet_list[b].field_list[a].variable.set('Optional') #to have a default for optional fields
                         else:
                             sheet_list[b].field_list[a].variable.set('Not Required')
-                        column += 200
+                        column += 1
                     
                     self.sheet_names_list.append((self.sheet_names[b], b)) #a list with only the sheets to be considered in the analysis
                 
                 sheet_list[b].sheet.checkbox.config (state = 'disabled')
-            
-            self.file_path = self.entry_path.entry.get()
             
             self.upload_button.button.config(state = 'disabled')
             self.go_back.config(command = lambda: go_back('fields'))
@@ -697,21 +643,20 @@ class MigrationFile:
                                 if str(row) != 'nan':
                                     sheet_list[a[1]].field_list[b[1]].text_input.insert(tkinter.END, str(row) + '\n')
 
-        def migration_input (repeat: str = 'No'):
-            if repeat == 'No':
-                migration_forget(sheet_list, 'No')
+        def migration_input ():
+            migration_forget(sheet_list, 'No')
             self.present_fields = []
             self.error_list = []
 
             for a in self.sheet_names_list:
                 
-                df = pd.read_excel(self.file_path, a[0])
+                df = pd.read_excel(self.entry_path.entry.get(), a[0])
 
                 # Get the column names
                 column_tech_names = df.iloc[3, :].tolist()
                 column_list = df.iloc[6, :].tolist()
                 column_names = []
-                for column in range(len(column_list)): #similar to the one done in migration fields, but in this case the column number is appended instead of color
+                for column in range(len(column_list)): #similar to the one done in migration fields, but in this case also the column number is appended
                     if self.mode.variable.get() == 'Customer':
                         if column_tech_names[column] not in customizing.mf_customer_general_data and column_tech_names[column] not in customizing.mf_customer_company_data:
                             column_names.append((column_list[column].split('\n')[0], column))
@@ -769,26 +714,21 @@ class MigrationFile:
                                         self.error_list.append((a[0], 'W001', row + 2 , column_list[n].split('\n')[0].replace("*", "").replace("+", ""), 'This field is not blank, but is in a column not considered in this analysis'))
 
                 #checks for mandatory fields (are they filled?) and for not required fields (are they all blank?)
-                c = 0
                 for b in range(maximum_field):
                     rows = df.iloc[:, column_names[b][1]].tolist()
                     if sheet_list[a[1]].field_list[b].variable.get() == 'Mandatory':
-                        self.present_fields.append((a[0], sheet_list[a[1]].field_list[b].label_text, column_names[b][1], b)) #in this list only fields mandatory and optional will be included
-                        if repeat == 'No':
-                            sheet_list[a[1]].field_list[b].label.label.place(x = 5 + 170*c, y = 10)
-                            sheet_list[a[1]].field_list[b].text_input.place(x = 5 + 170*c, y = 50)
+                        self.present_fields.append((a[0], sheet_list[a[1]].field_list[b].label_text, column_names[b][1], b)) #in this list will be included only fields mandatory and optional
+                        sheet_list[a[1]].field_list[b].label.label.grid(row = 0, column = b, sticky = tkinter.W, padx = 10)
+                        sheet_list[a[1]].field_list[b].text_input.grid(row = 1, column = b, padx = 10)
                         for row in range(len(rows)):
                             if row >= 7:
                                 if str(rows[row]) == 'nan' and type(rows[row]) == float:
                                     self.error_list.append((a[0], 'E001', row + 2 , sheet_list[a[1]].field_list[b].label_text.replace("*", "").replace("+", ""), 'This mandatory field is blank'))
-                        c+=1
-
+                    
                     elif sheet_list[a[1]].field_list[b].variable.get() == 'Optional':
                         self.present_fields.append((a[0], sheet_list[a[1]].field_list[b].label_text, column_names[b][1], b))
-                        if repeat == 'No':
-                            sheet_list[a[1]].field_list[b].label.label.place(x = 5 + 170*c, y = 10)
-                            sheet_list[a[1]].field_list[b].text_input.place(x = 5 + 170*c, y = 50)
-                        c+=1
+                        sheet_list[a[1]].field_list[b].label.label.grid(row = 0, column = b, sticky = tkinter.W, padx = 10)
+                        sheet_list[a[1]].field_list[b].text_input.grid(row = 1, column = b, padx = 10)
                     
                     else:
                         for row in range(len(rows)):
@@ -796,32 +736,17 @@ class MigrationFile:
                                 if str(rows[row]) != 'nan' or type(rows[row]) != float:
                                     self.error_list.append((a[0], 'E002', row + 2 , sheet_list[a[1]].field_list[b].label_text.replace("*", "").replace("+", ""), 'This not required field is filled'))
 
+            self.tab.select(0)
 
-            if repeat == 'No':
-                self.tab.select(0) #in this way the first tab is selected by default
+            self.download_input_button.button.config (command = lambda: create_excel_file (self.sheet_names_list, self.present_fields))
+            self.upload_input_button.button.config (command = lambda: (browse_file_xlsx(self.upload_input_entry), read_file_xlsx(self.upload_input_entry.entry.get()), upload_input_file()))
+            self.download_input_button.button.grid(row = 0, column = 5, padx = 10)
+            self.upload_input_button.button.grid(row = 0, column = 6, padx = 10)
 
-                self.download_input_button.button.config (command = lambda: create_excel_file (self.sheet_names_list, self.present_fields))
-                self.upload_input_button.button.config (command = lambda: (browse_file_xlsx(self.upload_input_entry), read_file_xlsx(self.upload_input_entry.entry.get()), upload_input_file()))
-                self.download_input_button.button.place(x = 800, y = 10)
-                self.upload_input_button.button.place(x = 1000, y = 10)
+            self.go_back.config(command = lambda: go_back('input'))
+            self.go_ahead.config(command = migration_analysis)
 
-                self.go_back.config(command = lambda: go_back('input'))
-                self.go_ahead.config(command = migration_analysis)
-
-        def migration_analysis (repeat: str = 'No'):
-            def repeat_analysis ():
-                self.error_list = []
-                read_file_xlsx(self.file_path)
-                migration_input(repeat='Yes')
-                migration_analysis(repeat='Yes')
-                repeat_label = customizing.Label (
-                    frame = tree.frame,
-                    text = 'Analysis updated',
-                    dimension = 12,
-                    x = 1200,
-                    y = 10
-                )
-                repeat_label.label.after (ms = 3000, func = lambda: repeat_label.label.config (text = ''))
+        def migration_analysis ():
             mode_counter = 0
             #lists useful to track speficic fields and do specific transversal checks
             bp_code = []
@@ -846,7 +771,7 @@ class MigrationFile:
                     if j[0] == a[0]:
                         sheet_present_field.append((j[2], j[3])) #it identifies the name and the position of the analysis fields in the sheet
                 
-                df = pd.read_excel(self.file_path, a[0])
+                df = pd.read_excel(self.entry_path.entry.get(), a[0])
 
                 # Get the column names
                 column_list = df.iloc[6, :].tolist()
@@ -902,15 +827,8 @@ class MigrationFile:
 
                 for b in sheet_present_field:
                     rows = df.iloc[:, b[0]].tolist()
-                    input_content = []
-                    if repeat == 'No':
-                        input_content = sheet_list[a[1]].field_list[b[1]].text_input.get("1.0", tkinter.END).split('\n')
-                        self.input_fields.append((a[1], b[1], sheet_list[a[1]].field_list[b[1]].text_input.get("1.0", tkinter.END).split('\n')))
-                    else:
-                        for h in self.input_fields:
-                            if h[0] == a[1] and h[1] == b[1]:
-                                input_content = h[2]
-
+                    input_content = sheet_list[a[1]].field_list[b[1]].text_input.get("1.0", tkinter.END).split('\n')
+                    
                     for row in range(len(rows)):
                         if row >= 7 and str(rows[row]) != 'nan': #only for rows with template data and fields not blank
                             #format and length controls
@@ -1064,6 +982,7 @@ class MigrationFile:
                                 if self.mode_key_fields[n] not in main_key_fields_list:
                                     self.error_list.append((a[0], 'E009', '' , '', f'The {self.mode_key_fields[n]} key field values are not in this sheet'))                         
 
+
             for widget in frame.winfo_children():
                 widget.destroy()   
 
@@ -1094,26 +1013,15 @@ class MigrationFile:
             image_error = ImageTk.PhotoImage(image_error_img)
             image_warning = ImageTk.PhotoImage(image_warning_img)
 
-            label_error = tkinter.Label(tree.frame, image=image_error, text = f'Errors: {errors_number}', compound=tkinter.LEFT, font = ('Calibri', 14, 'bold'), background = '#F0F8FF')
-            label_error.place (x = 400, y = 10)
+            label_error = tkinter.Label(tree.frame_1.frame, image=image_error, text = f'Errors: {errors_number}', compound=tkinter.LEFT, font = ('Calibri', 14, 'bold'), background = '#F0F8FF')
+            label_error.grid(column=1, row=0, padx=200, pady=10)
 
-            label_warning = tkinter.Label(tree.frame, image=image_warning, text = f'Warnings: {warnings_number}', compound=tkinter.LEFT, font = ('Calibri', 14, 'bold'), background = '#F0F8FF')
-            label_warning.place (x = 600, y = 10)
+            label_warning = tkinter.Label(tree.frame_1.frame, image=image_warning, text = f'Warnings: {warnings_number}', compound=tkinter.LEFT, font = ('Calibri', 14, 'bold'), background = '#F0F8FF')
+            label_warning.grid(column=2, row=0, padx=20, pady=10)
 
             # Keep a reference to the image to prevent it from being garbage collected
             label_error.image = image_error
             label_warning.image = image_warning
-
-            
-
-            repeat_analysis_button = customizing.Button (
-                frame = tree.frame,
-                text = 'Repeat Analysis',
-                command = repeat_analysis,
-                x = 1000,
-                y = 10
-                )
-
 
         self.frame = frame
 
@@ -1129,32 +1037,28 @@ class MigrationFile:
 
         self.error_list = []
 
-        self.file_path = ''
-
-        self.input_fields = []
-
         self.entry_path = customizing.Entry(
             frame = self.frame,
             width = 80,
-            x = 150,
-            y = 20
+            column = 1,
+            entry_pady = 10
             )
         
-        image_path_back = 'above_thearrow_1550 (1).png'
+        image_path_back = 'C:\\Users\\scham\\OneDrive\\Desktop\\SAP HELPER\\Icon\\above_thearrow_1550 (1).png'
         self.button_icon_back = tkinter.PhotoImage(file=image_path_back)
 
         # Create a button with the resized image
         self.go_back = tkinter.Button(self.frame, text="",command = home, image=self.button_icon_back, compound=tkinter.LEFT, background = '#F0F8FF')
-        self.go_back.place(x = 650, y = 10)
+        self.go_back.grid(row = 0, column = 3, padx = 5)
 
         #button to make fields appear
         # Load an image for the button icon
-        image_path = 'Next_arrow_1559 (1).png'
+        image_path = 'C:\\Users\\scham\\OneDrive\\Desktop\\SAP HELPER\\Icon\\Next_arrow_1559 (1).png'
         self.button_icon = tkinter.PhotoImage(file=image_path)
 
         # Create a button with the resized image
         self.go_ahead = tkinter.Button(self.frame, text="",command = migration_fields, image=self.button_icon, compound=tkinter.LEFT, background = '#F0F8FF')
-        self.go_ahead.place(x = 700, y = 10)
+        self.go_ahead.grid(row = 0, column = 4, padx = 5)
         self.go_ahead.config(state = 'disabled')
 
         #button to upload the .xlsx file
@@ -1162,8 +1066,7 @@ class MigrationFile:
             frame = self.frame, 
             text = "Upload .xlsx file", 
             command = lambda: (browse_file_xlsx (entry_path=self.entry_path), read_file_xlsx (entry_path_str=self.entry_path.entry.get()), sheet_checkboxes ()),
-            x = 10,
-            y = 10
+            pady = 10
             )
 
         self.sheet_1 = customizing.Sheet (frame = frame, tab = self.tab)
@@ -1202,33 +1105,35 @@ class MigrationFile:
             text = 'Download Input Template',
             width = 22
         )
-        self.download_input_button.button.place_forget()
+        self.download_input_button.button.grid_forget()
 
         self.upload_input_button = customizing.Button (
             frame = self.frame,
             text = 'Upload Input Template',
             width = 22
         )
-        self.upload_input_button.button.place_forget()
+        self.upload_input_button.button.grid_forget()
 
         self.upload_input_entry = customizing.Entry (
             frame = frame
         )
-        self.upload_input_entry.entry.place_forget()
+        self.upload_input_entry.entry.grid_forget()
+        self.upload_input_entry.label.label.grid_forget()
 
-        self.mode_frame = tkinter.Frame (self.frame, width = 300, height = 300, background = '#F0F8FF')
-        self.mode_frame.place (x = 250, y = 100)
+        self.mode_frame = customizing.Frame (
+            root = self.frame,
+            column = 1,
+            row = 1,
+            row_span = 100
+        )
 
         self.mode = customizing.RadioButton_2 (
-            frame = self.mode_frame,
+            frame = self.mode_frame.frame,
             label_text = 'Analysis Mode',
             text_1 = 'Generic',
             dimension = 15
         )
-        self.mode_frame.place_forget()
-
-        
-        
+        self.mode_frame.frame.grid_forget()
         
 
         sheet_list = [self.sheet_1, self.sheet_2, self.sheet_3, self.sheet_4, self.sheet_5, self.sheet_6, self.sheet_7, self.sheet_8, self.sheet_9, self.sheet_10, self.sheet_11, self.sheet_12, self.sheet_13, self.sheet_14, self.sheet_15, self.sheet_16, self.sheet_17, self.sheet_18, self.sheet_19, self.sheet_20, self.sheet_21, self.sheet_22, self.sheet_23, self.sheet_24, self.sheet_25, self.sheet_26, self.sheet_27, self.sheet_28, self.sheet_29, self.sheet_30]
@@ -1264,3 +1169,5 @@ main = MainRoot (root = mainroot.root, frame = mainframe.frame)
 
 
 mainroot.root.mainloop()
+
+
