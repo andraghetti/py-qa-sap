@@ -1,50 +1,72 @@
 import tkinter as tk
 
-class ScrollableFrame(tk.Frame):
-    def __init__(self, master=None, **kwargs):
-        tk.Frame.__init__(self, master, **kwargs)
+class LabelSelectorApp:
+    def __init__(self, root: tk.Tk):
+        self.root = root
+        self.root.title("Label Selector")
+        self.root.geometry("600x400")
 
-        # Create a canvas and add it to the frame
-        self.canvas = tk.Canvas(self, borderwidth=0, highlightthickness=0, background='#F0F8FF')
+        self.selected_label = None
 
-        # Create a frame inside the canvas to hold the widgets
-        self.inner_frame = tk.Frame(self.canvas, background='#11F8FF')
+        # Left frame for labels
+        self.left_frame = tk.Frame(self.root, bg="lightblue", width=200)
+        self.left_frame.pack(side="left", fill="y")
 
-        # Add a horizontal scrollbar and link it to the canvas
-        self.h_scrollbar = tk.Scrollbar(self, orient="horizontal", command=self.canvas.xview, background='#F0F8FF')
-        self.canvas.configure(xscrollcommand=self.h_scrollbar.set)
+        # Right frame for display
+        self.right_frame = tk.Frame(self.root, bg="white", width=400)
+        self.right_frame.pack(side="right", fill="both", expand=True)
 
-        # Pack the canvas and scrollbar into the frame
-        self.canvas.pack(side="top", fill=tk.BOTH, expand=tk.TRUE)
-        self.h_scrollbar.pack(side="bottom", fill="x")
+        # Label for displaying content on the right
+        self.display_label = tk.Label(
+            self.right_frame, 
+            text="Selected content will appear here", 
+            bg="white", 
+            font=("Arial", 14), 
+            wraplength=350, 
+            justify="center"
+        )
+        self.display_label.pack(expand=True)
 
-        # Add the inner frame to the canvas
-        self.canvas.create_window((0, 0), window=self.inner_frame, anchor="nw", height=400, width=400)
+        # Add labels to the left frame
+        self.label_texts = ["Label 1", "Label 2", "Label 3", "Label 4"]
+        self.labels = []
 
-        # Configure the canvas to update the scroll region when the frame size changes
-        self.inner_frame.bind("<Configure>", self.on_inner_frame_configure)
+        for text in self.label_texts:
+            label = tk.Label(self.left_frame, text=text, font=("Arial", 12), bg="lightgray", relief="ridge")
+            label.pack(pady=5, padx=10, fill="x")
+            label.bind("<Button-1>", self.on_label_click)  # Bind left-click event
+            self.labels.append(label)
 
-    def on_inner_frame_configure(self, event):
-        # Update the scroll region to encompass the inner frame
-        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+        # Add a button to display content
+        self.display_button = tk.Button(
+            self.left_frame, 
+            text="Display Selected Label", 
+            command=self.display_selected_label, 
+            bg="lightgreen", 
+            font=("Arial", 12)
+        )
+        self.display_button.pack(pady=20, padx=10, fill="x")
 
-    def add_widget(self, widget, **kwargs):
-        # Add a widget to the inner frame
-        widget.place(**kwargs)
-        
-        # Update the canvas scroll region
-        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+    def on_label_click(self, event):
+        # Deselect the previously selected label
+        if self.selected_label:
+            self.selected_label.config(bg="lightgray")
 
-# Create the main window
-root = tk.Tk()
+        # Select the new label
+        self.selected_label = event.widget
+        self.selected_label.config(bg="yellow")
 
-# Create a ScrollableFrame instance
-scrollable_frame = ScrollableFrame(root, background='#10F8AA')
-scrollable_frame.pack(fill=tk.BOTH, expand=tk.TRUE)
+    def display_selected_label(self):
+        # Show the content of the selected label in the right frame
+        if self.selected_label:
+            content = self.selected_label.cget("text")
+            self.display_label.config(text=f"Selected Label Content:\n{content}")
+        else:
+            self.display_label.config(text="No label selected!")
 
-# Add a label to the inner frame
-label = tk.Label(scrollable_frame.inner_frame, text="Hello, World!", bg="white")
-scrollable_frame.add_widget(label, x=10, y=10)
 
-# Start the tkinter event loop
-root.mainloop()
+# Main application
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = LabelSelectorApp(root)
+    root.mainloop()

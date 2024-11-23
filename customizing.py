@@ -3,6 +3,11 @@ from tkinter import ttk
 import tkinter.messagebox
 import pyperclip
 import re
+from tkinterdnd2 import DND_FILES, TkinterDnD
+import pandas as pd
+from datetime import datetime
+from openpyxl import load_workbook
+from openpyxl.styles import Font
 
 #dictionary with all the known bank transaction types
 ebs_mt940_dict = {
@@ -48,17 +53,28 @@ ebs_mt940_dict = {
 }
 
 #specific modes to implement additional checks for these templates
-migration_file_modes = ['Fixed asset', 'Customer', 'Supplier', 'FI - Accounts receivable open item', 'FI - Accounts payable open item', 'FI - G/L account balance and open/line item']
+migration_file_modes = ['Fixed asset', 'Customer', 'Customer - extend existing record by new org levels', 'Supplier', 'Supplier - extend existing record by new org levels', 'FI - Accounts receivable open item', 'FI - Accounts payable open item', 'FI - G/L account balance and open/line item']
 
 migration_file_main_sheet = ['Master Details', 'General Data', 'Customer Open Items', 'Vendor Open Items', 'GL Balance']
 
 #a list of sheets for which is mandatory to have all the key value of the main sheet
-migration_file_secondary_sheets = ['Posting Information', 'Time-Dependent Data', 'Depreciation Areas', 'Cumulative Values', #ASSET
-                                   'BP Roles', 'Company Data', 'Sales Data', 'Sales Partner', 'Output Tax', #CUSTOMER
-                                   'Purchasing Organization Data'] #VENDOR
+migration_file_secondary_sheets = ['Posting Information', 'Time-Dependent Data', 'Depreciation Areas', #ASSET
+                                   'BP Roles'] #CUSTOMER/VENDOR
+
+migration_file_finance_bp_sheets = ['Company Data', 'Withholding Tax Data']
+
+migration_file_finance_bp_complete_sheets = ['Company Data'] #sheets for which all the BP open in finance, need to be filled
+
+migration_file_logistic_bp_sheets = ['Sales Data', 'Output Tax', 'Purchasing Organization Data']
+
+migration_file_logistic_bp_complete_sheets = ['Sales Data', 'Output Tax', 'Purchasing Organization Data'] #sheets for which all the BP open in sales/purchasing, need to be filled
+
+migration_file_purchasing_bp_dependent_sheets = ['Partner Functions']
+
+migration_file_sales_bp_dependent_sheets = ['Sales Partner']
 
 #a list of technical name fields for which is forbidden to have spaces
-migration_file_space_forbidden_fields = ['BUKRS', 'ANLN1', 'ANLN2', 'ANLKL', 'GSBER', 'KOSTL', 'WERKS', 'AFABE', 'ASSETTRTYP', 'CURRENCY', #ASSET
+migration_file_space_forbidden_fields = ['BUKRS', 'ANLN2', 'ANLKL', 'GSBER', 'KOSTL', 'WERKS', 'AFABE', 'ASSETTRTYP', 'CURRENCY', #ASSET
                                          'KUNNR', 'BU_GROUP', 'VBUND', 'BPEXT', 'COUNTRY', 'REGION', 'LANGU_CORR', 'SMTP_ADDR', #CUSTOMER - GENERAL DATA
                                          'BP_ROLE', 'MAHNA', 'ZTERM', 'ZWELS_01', 'ZWELS_02', 'ZWELS_03', 'ZWELS_04', 'HBKID', 'AKONT', 'WITHT', 'WT_WITHCD', #CUSTOMER - BP ROLES/COMPANY DATA/WHT
                                          'VKORG', 'VTWEG', 'SPART', 'KDGRP', 'BZIRK', 'VKBUR', 'WAERS', 'KONDA', 'KALKS', 'LPRIO', 'VSBED', 'INCO1', 'KTGRD', 'PARVW', 'KUNN2', 'ALAND', 'TATYP', 'TAXKD', #CUSTOMER - SALES DATA/SALES PARTNER/OUTPUT TAX
@@ -75,6 +91,10 @@ mf_customer_company_data = ['TLFNS', 'TLFXS', 'INTAD']
 
 #fields not to be considered in the related sheet for supplier template (there is only a check about these fields are blank)
 mf_supplier_general_data = ['LEGAL_ENTY', 'LEGAL_ORG', 'FOUND_DAT', 'LIQUID_DAT', 'LOCATION_1', 'LOCATION_2', 'LOCATION_3', 'DTAMS', 'DTAWS', 'LNRZA', 'ESRNR', 'TERM_LI', 'MIN_COMP', 'COMSIZE', 'DECREGPC', 'CRC_NUM', 'RG', 'EXP', 'UF', 'RGDATE', 'RIC', 'RNE', 'RNEDATE', 'CNAE', 'LEGALNAT', 'CRTN', 'ICMSTAXPAY', 'INDTYP', 'TDT', 'J_1IEXCD', 'J_1IEXRN', 'J_1IEXRG', 'J_1IEXDI', 'J_1IEXCO', 'J_1IVTYP', 'J_1I_CUSTOMS', 'J_1IEXCIVE', 'J_1ISSIST', 'J_1IVENCRE', 'J_1ICSTNO', 'J_1ILSTNO', 'J_1ISERN', 'J_1IPANNO', 'J_1IPANREF', 'J_1IPANVALDT', 'J_1IDEDREF', 'VEN_CLASS', 'J_1KFTBUS', 'J_1KFTIND', 'J_1KFREPRE', 'CATEG', 'STATUS', 'VFNUM', 'VFNID', 'PARTNER_NAME', 'PARTNER_UTR', 'CRN', 'ALLOWANCE_TYPE', 'AU_CARRYING_ENT', 'AU_IND_UNDER_18', 'AU_PAYMENT_NOT_EXCEED_75', 'AU_WHOLLY_INP_TAXED', 'AU_PARTNER_WITHOUT_GAIN', 'AU_NOT_ENTITLED_ABN', 'AU_PAYMENT_EXEMPT', 'AU_PRIVATE_HOBBY', 'AU_DOMESTIC_NATURE', 'SC_CAPITAL', 'SC_CURRENCY', 'CITY2', 'HOME_CITY', 'TIME_ZONE', 'LZONE', 'BUILDING', 'ROOM', 'FLOOR', 'CO_NAME', 'HOUSE_NO2', 'STR_SUPPL3', 'LOCATION', 'TXJCD', 'NOTE_TELNR', 'TELNR_LONG_2', 'NOTE_TELNR_2', 'TELNR_LONG_3', 'NOTE_TELNR_3', 'NOTE_MOBILE', 'MOBILE_LONG_2', 'NOTE_MOBILE_2', 'MOBILE_LONG_3', 'NOTE_MOBILE_3', 'NOTE_FAXNR', 'FAXNR_LONG_2', 'NOTE_FAXNR_2', 'FAXNR_LONG_3', 'NOTE_FAXNR_3', 'NOTE_SMTP', 'SMTP_ADDR_2', 'NOTE_SMTP_2', 'SMTP_ADDR_3', 'NOTE_SMTP_3', 'URI_TYP', 'URI_ADDR', 'NOTE_URI', 'SPERR', 'SPERM']
+
+#fields not to be considered in the related sheet for customer-extended existing record by new org. template (there is only a check about these fields are blank)
+mf_customer_extend_company_data = ['ZWELS_08', 'ZWELS_09', 'ZWELS_10']
+mf_customer_extend_sales_data = ['KVGR5']
 
 #fields not to be considered in the related sheet for customer/vendor open items template (there is only a check about these fields are blank)
 mf_bp_open_items = ['ZBD1T', 'ZBD1P', 'ZBD2T', 'ZBD2P', 'ZBD3T', 'SKFBT', 'ACSKT']
@@ -125,7 +145,7 @@ mf_partner_function_customer = ['AG', 'RE', 'RG', 'WE', 'ZM']
 mf_partner_function_supplier = ['LF', 'WL', 'BA', 'RS', 'ZM']
 
 #only for this country the postal code additional check is set
-mf_postal_code_country = ['AD', 'CA', 'CZ', 'DE', 'ES' 'FR', 'GB', 'GR', 'IT', 'MT', 'NG', 'NL', 'PL', 'PT', 'SE', 'SK']
+mf_postal_code_country = ['AD', 'CA', 'CZ', 'DE', 'ES' 'FR', 'GB', 'GR', 'IT', 'MT', 'NG', 'NL', 'PL', 'PT', 'SE', 'SK', 'US']
 
 #only for this country the vat additional check is set
 mf_vat_country = ['IT', 'NG', 'AD']
@@ -141,13 +161,13 @@ class Root ():
         root_geometry:str = '1050x600'
     ):
         if tk_or_toplevel == 'TK':
-            self.root = tkinter.Tk()
+            self.root = TkinterDnD.Tk()
         else:
             self.root = tkinter.Toplevel()
         self.root.title(root_title)
         self.root.configure(bg = '#F0F8FF')
 
-        icon_path = r'C:\\Users\\scham\\OneDrive\\Desktop\\SAP HELPER\\Icon\\communication_assistance_help_support_service_information_icon_230472.ico'
+        icon_path = 'communication_assistance_help_support_service_information_icon_230472.ico'
         self.root.iconbitmap(icon_path)
 
         self.root.state('zoomed')
@@ -194,7 +214,11 @@ class Button ():
         anchor: str = 'nw',
         bordermode: str = 'inside'
     ):
-        self.button = tkinter.Button(frame, text = text, image = image, command = command, width = width, height = height, background = '#D8E6EC', font = ('Calibri', dimension, 'bold'))
+        if image != '':
+            img = tkinter.PhotoImage(file=image)
+            self.button = tkinter.Button(frame, image = img, command = command)
+        else:
+            self.button = tkinter.Button(frame, text = text, command = command, width = width, height = height, background = '#D8E6EC', font = ('Calibri', dimension, 'bold'))
         self.button.place (x = x, y = y, anchor = anchor, bordermode = bordermode)
 
 class Label ():
@@ -203,6 +227,7 @@ class Label ():
         frame: None,
         text: str,
         dimension: int = 13,
+        weight = 'normal',
         justify = tkinter.LEFT,
         foreground: str = 'black',
         wraplength: int = 1000,
@@ -211,7 +236,7 @@ class Label ():
         anchor: str = 'nw',
         bordermode: str = 'inside'        
     ):
-        self.label = tkinter.Label(frame, text = text, font = ('Calibri', dimension), justify = justify, background = '#F0F8FF', foreground = foreground, wraplength = wraplength)
+        self.label = tkinter.Label(frame, text = text, font = ('Calibri', dimension, weight), justify = justify, background = '#F0F8FF', foreground = foreground, wraplength = wraplength)
         self.label.place (x = x, y = y, anchor = anchor, bordermode = bordermode)
 
 class Entry ():
@@ -258,6 +283,57 @@ class Checkbox ():
         self.checkbox = tkinter.Checkbutton(frame, text = text, variable = self.variable, command = command, background = '#F0F8FF')
         self.checkbox.place (x = x, y = y, anchor = anchor, bordermode = bordermode)
 
+class TextEntry ():
+    def __init__(
+        self, 
+        frame,
+        text_height: int,
+        text_width: int,
+        height: int,
+        width: int,
+        entry_path: Entry,
+        x: int = 0,
+        y: int = 0
+    ):
+        self.entry_path = entry_path
+
+        # Create a Text widget to display file content
+        self.text_entry = tkinter.Text(frame, wrap="word", height=text_height, width=text_width)
+        self.text_entry.place (x = x, y = y, height = height, width = width)
+
+        # Add a label overlay on the Text widget
+        self.drag_label = tkinter.Label(frame, text="Drag and drop a .txt file here", bg="white", fg="black")
+        self.drag_label.place(in_=self.text_entry, relx=0.5, rely=0.5, anchor="center")
+
+        # Bind the drop event to the Text widget
+        self.text_entry.drop_target_register(DND_FILES)
+        self.text_entry.dnd_bind("<<Drop>>", self.on_drop)
+
+        self.y_scrollbar = ttk.Scrollbar(frame, orient='vertical', command=self.text_entry.yview)
+        self.y_scrollbar.place(x = width + x, y = y, height = height)
+        self.text_entry.configure(yscrollcommand=self.y_scrollbar.set)
+    
+    def on_drop(self, event):
+        file_path = event.data.strip("{}")
+        if file_path.endswith('.txt'):  # Only accept .txt files
+            try:
+                with open(file_path, 'r') as file:
+                    content = file.read()
+                    self.text_entry.delete(1.0, tkinter.END)  # Clear existing content
+                    self.text_entry.insert(tkinter.END, content)  # Insert file content
+                # Hide the drag-and-drop instruction label
+                self.drag_label.place_forget()
+            except Exception as e:
+                self.text_entry.delete(1.0, tkinter.END)
+                self.text_entry.insert(tkinter.END, f"Error reading file: {e}")
+        else:
+            self.text_entry.delete(1.0, tkinter.END)
+            self.text_entry.insert(tkinter.END, "Please drop a valid .txt file.")
+        self.entry_path.entry.config(state = 'normal')
+        self.entry_path.entry.delete(0, tkinter.END)
+        self.entry_path.entry.insert(0, file_path)
+        self.entry_path.entry.config(state = 'disabled')
+        
 class MenuBar ():
     def __init__ (
         self,
@@ -304,8 +380,18 @@ class Treeview():
                 pyperclip.copy(copied_text)
 
         self.frame = frame
+        self.headers = col_text
+        self.rows = lst
 
-        self.tree = ttk.Treeview(self.frame, columns=col_text, show='headings', height=len(lst))
+
+        # Configure Treeview style for bold, left-aligned headers
+        style = ttk.Style(self.frame)
+        style.configure(
+            "Custom.Treeview.Heading",
+            font=("Calibri", 12, "bold")
+        )
+
+        self.tree = ttk.Treeview(self.frame, columns=col_text, show='headings', height=len(lst), style="Custom.Treeview")
         for a in range(len(col_text)):
             self.tree.heading(col_text[a], text=col_text[a])
             self.tree.column(col_text[a], width=width_list[a])
@@ -314,15 +400,15 @@ class Treeview():
 
         # Add a horizontal scrollbar
         self.x_scrollbar = ttk.Scrollbar(self.frame, orient='horizontal', command=self.tree.xview)
-        self.x_scrollbar.place(x=10, y=750, width=1500)
+        self.x_scrollbar.place(x=10, y=710, width=1500)
         self.tree.configure(xscrollcommand=self.x_scrollbar.set)
 
         # Add a vertical scrollbar
         self.y_scrollbar = ttk.Scrollbar(self.frame, orient='vertical', command=self.tree.yview)
-        self.y_scrollbar.place(x=1510, y=70 + dist, height=680 - dist)
+        self.y_scrollbar.place(x=1510, y=70 + dist, height=640 - dist)
         self.tree.configure(yscrollcommand=self.y_scrollbar.set)
 
-        self.tree.place(x=10, y=70 + dist, width=1500, height=680 - dist)
+        self.tree.place(x=10, y=70 + dist, width=1500, height=640 - dist)
 
         self.tree.bind("<Control-c>", on_copy)
 
@@ -331,6 +417,64 @@ class Treeview():
 
         self.select_all_button = tkinter.Button(self.frame, text='Select All and Copy', command=select_all, background='#D8E6EC', font=('Calibri', 12, 'bold'))
         self.select_all_button.place(x=10, y=10, width=200, height=30)
+    
+    def export_to_excel(self, file_path: str, file_name: str, ebs: str = "NO"):
+        # Extract data from Treeview
+        data = [self.headers]
+
+        for child in self.rows:
+            data.append(child)
+
+        # Create a Pandas DataFrame
+        df = pd.DataFrame(data)
+
+        current_datetime_str = datetime.now().strftime("%Y-%m-%d %H.%M.%S")
+
+        father_path = file_path.rsplit("/", 1)[0]
+
+        # Save the DataFrame to an Excel file
+        file_path = father_path + "/" + file_name + f" - {current_datetime_str}.xlsx"
+        df.to_excel(file_path, index=False, header=False)
+
+        # Load the workbook to adjust column widths
+        workbook = load_workbook(file_path)
+        sheet = workbook.active
+
+        # Apply bold font to the first and fourth rows
+        bold_font = Font(bold=True)
+        
+        for row_num, row_cells in enumerate(sheet.iter_rows(), start=1):
+            if ebs == "YES" and (row_num == 1 or row_num == 4):  # Make first and fourth rows bold
+                for cell in row_cells:
+                    cell.font = bold_font
+            if row_num == 1: # Make first row bold
+                for cell in row_cells:
+                    cell.font = bold_font
+
+        
+        # Auto-adjust the column widths
+        for col in sheet.columns:
+            max_length = 0
+            column = col[0].column_letter  # Get the column name
+            for cell in col:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(cell.value)
+                except:
+                    pass
+            adjusted_width = (max_length + 2)  # Adjust for padding
+            sheet.column_dimensions[column].width = adjusted_width
+
+        # Save the workbook with adjusted column widths
+        workbook.save(file_path)
+
+        save_label = Label (
+            frame = self.frame,
+            text=f'The file was saved in {father_path}',
+            foreground = '#006400',
+            x = 10,
+            y = 740
+            )
 
 class RadioButton_2 ():
     def __init__ (
@@ -480,166 +624,15 @@ class Sheet ():
         self.field_48 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
         self.field_49 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
         self.field_50 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_51 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_52 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_53 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_54 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required') 
-        #self.field_55 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_56 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_57 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_58 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_59 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_60 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_61 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_62 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_63 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_64 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_65 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_66 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_67 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_68 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_69 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_70 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_71 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_72 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_73 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_74 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_75 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_76 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_77 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_78 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_79 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required') 
-        #self.field_80 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_81 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_82 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_83 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_84 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_85 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_86 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_87 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_88 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_89 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_90 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_91 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_92 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_93 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_94 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_95 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_96 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_97 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_98 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_99 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_100 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_101 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_102 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_103 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_104 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required') 
-        #self.field_105 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_106 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_107 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_108 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_109 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_110 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_111 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_112 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_113 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_114 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_115 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_116 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_117 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_118 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_119 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_120 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_121 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_122 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_123 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_124 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_125 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_126 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_127 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_128 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_129 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required') 
-        #self.field_130 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_131 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_132 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_133 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_134 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_135 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_136 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_137 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_138 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_139 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_140 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_141 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_142 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_143 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_144 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_145 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_146 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_147 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_148 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_149 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_150 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_151 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_152 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_153 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_154 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required') 
-        #self.field_155 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_156 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_157 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_158 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_159 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_160 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_161 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_162 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_163 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_164 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_165 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_166 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_167 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_168 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_169 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_170 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_171 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_172 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_173 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_174 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_175 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_176 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_177 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_178 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_179 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required') 
-        #self.field_180 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_181 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_182 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_183 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_184 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_185 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_186 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_187 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_188 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_189 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_190 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_191 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_192 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_193 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_194 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_195 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_196 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_197 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_198 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_199 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        #self.field_200 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
+
         self.field_list = [self.field_1, self.field_2, self.field_3, self.field_4, self.field_5, self.field_6, self.field_7, self.field_8, self.field_9, self.field_10,
                            self.field_11, self.field_12, self.field_13, self.field_14, self.field_15, self.field_16, self.field_17, self.field_18, self.field_19, self.field_20,
                            self.field_21, self.field_22, self.field_23, self.field_24, self.field_25, self.field_26, self.field_27, self.field_28, self.field_29, self.field_30,
                            self.field_31, self.field_32, self.field_33, self.field_34, self.field_35, self.field_36, self.field_37, self.field_38, self.field_39, self.field_40,
                            self.field_41, self.field_42, self.field_43, self.field_44, self.field_45, self.field_46, self.field_47, self.field_48, self.field_49, self.field_50]
-                           #self.field_51, self.field_52, self.field_53, self.field_54, self.field_55, self.field_56, self.field_57, self.field_58, self.field_59, self.field_60,
-                           #self.field_61, self.field_62, self.field_63, self.field_64, self.field_65, self.field_66, self.field_67, self.field_68, self.field_69, self.field_70,
-                           #self.field_71, self.field_72, self.field_73, self.field_74, self.field_75, self.field_76, self.field_77, self.field_78, self.field_79, self.field_80,
-                           #self.field_81, self.field_82, self.field_83, self.field_84, self.field_85, self.field_86, self.field_87, self.field_88, self.field_89, self.field_90,
-                           #self.field_91, self.field_92, self.field_93, self.field_94, self.field_95, self.field_96, self.field_97, self.field_98, self.field_99, self.field_100
+
+
+
 
 #A = letter; N = number; X = number/letter
 def postal_code_check (postal_code: str, country: str):
@@ -660,8 +653,9 @@ def postal_code_check (postal_code: str, country: str):
         error = 'Should be in format "NNNN AA"'
     elif country == 'PL' and not re.compile(r'^\d{2}-\d{3}$').match(postal_code):
         error = 'Should be in format "NN-NNN"'
-    elif country == 'PT' and not re.compile(r'^\d{4}-\d{3}$').match(postal_code):
-        error = 'Should be in format "NNNN-NNN"'
+    elif country == 'US' and not re.compile(r'^\d{5}-\d{4}$').match(postal_code):
+        error = 'Should be in format "NNNNN-NNNN"'
+    
 
     return error
 
@@ -692,7 +686,7 @@ def bank_check (sheet: str, bank_country: str, bank_key: str, bank_acc_number: s
         if not re.compile(r'^\d{8}$').match(bank_key):
             error = f'For country {bank_country} the bank key should be in format "NNNNNNNN". '
 
-    elif bank_country == 'BE' or bank_country == 'LU':
+    elif bank_country == 'BE' or bank_country == 'LU' or bank_country == 'AE':
         if not re.compile(r'^\d{3}$').match(bank_key):
             error = f'For country {bank_country} the bank key should be in format "NNN". '
 
@@ -706,8 +700,8 @@ def bank_check (sheet: str, bank_country: str, bank_key: str, bank_acc_number: s
     
     if sheet == 'Bank Details':
         if bank_country == 'IT':
-            if not re.compile(r'^\d{12}$').match(bank_acc_number):
-                error += f'For country {bank_country} the bank account number should be in format "NNNNNNNNNNNN". '
+            if not re.compile(r'^[A-Z0-9]{12}$').match(bank_acc_number):
+                error += f'For country {bank_country} the bank account number should be in format "XXXXXXXXXXXX". '
             if not re.compile(r'^[A-Z]{1}$').match(bank_cont_key):
                 error += f'For country {bank_country} the bank control key should be in format "A". '
             if not re.compile(fr'^IT\d{{2}}{re.escape(bank_cont_key)}{re.escape(bank_key)}{re.escape(bank_acc_number)}$').match(iban):
@@ -724,9 +718,9 @@ def bank_check (sheet: str, bank_country: str, bank_key: str, bank_acc_number: s
         elif bank_country == 'BE':
             if not re.compile(fr'^{re.escape(bank_key)}-\d{{7}}-{re.escape(bank_cont_key)}$').match(bank_acc_number):
                 error += f'For country {bank_country} the bank account number should be in format "NNN-NNNNNNN-NN". '
-            if not re.compile(r'^\d{2}$').match(bank_cont_key):
-                error += f'For country {bank_country} the bank control key should be in format "NN". '
-            if not re.compile(fr'^BE\d{{2}}{re.escape(bank_key)}\d{{7}}{re.escape(bank_cont_key)}$').match(iban):
+            if bank_cont_key != 'nan':
+                error += f'For country {bank_country} the bank control key should be blank. '
+            if not re.compile(fr'^BE\d{{2}}{re.escape(bank_key)}\d{{9}}$').match(iban):
                 error += 'Based on other data the IBAN is not correct; check it using IBAN transaction in this program'
 
         elif bank_country == 'FR':
@@ -790,6 +784,14 @@ def bank_check (sheet: str, bank_country: str, bank_key: str, bank_acc_number: s
                 error = f'For country {bank_country} the bank control key should be blank. '
             if iban != 'nan':
                 error += f'For country {bank_country} the IBAN should be blank'
+        
+        elif bank_country == 'AE':
+            if not re.compile(r'^\d{16}$').match(bank_acc_number):
+                error += f'For country {bank_country} the bank account number should be in format "NNNNNNNNNNNNNNNN". '
+            if bank_cont_key != 'nan':
+                error += f'For country {bank_country} the bank control key should be blank. '
+            if not re.compile(fr'^AE\d{{2}}{re.escape(bank_key)}{re.escape(bank_acc_number)}$').match(iban):
+                error += 'Based on other data the IBAN is not correct; check it using IBAN transaction in this program'
 
     return error
 
@@ -797,4 +799,23 @@ ebs_mt940_text = "It's possible to upload a .txt file or paste the content in th
 
 iban_text = "It's possible to paste a sequence of IBANs in the text space. During analysis, for the country set in the program, the program splits the IBAN code into SAP fields."
 
-mf_text = ""
+mf_text = """
+With the Migration File functionality, it's possible to analyze the .xlsx file related to SAP migration in S4/Hana.
+The program allow to upload the file and recognizes all the related errors, based on input values decided by user.
+In order to avoid program crash, the analysis will regard a maximum of 30 sheets and 50 fields per sheet.
+After the file uploading there are some steps to be followed:
+1.
+The user should tick the checkboxes related to Excel sheets to be considered in the analysis.
+In some cases the program recognizes a specific template and it will be possible to select a specific mode, in order to have specific fields to be considered and specific checks. In case of "Generic" mode the first 30 sheets and 50 fields per sheet will be considered.
+2.
+The user can choose the field status, field by field. It's possible to choose among: 1)mandatory; 2)optional; 3)not required.
+It is possible to set a default for the field status. If the column header cell in Excel is green or is present the '*', so the field will be considered as mandatory in that sheet. If the column header cell in Excel is yellow or is present the '+', so the field will be considered as optional in that sheet.
+3.
+The user can choose the input values admitted for each field mandatory or optional. If the input field is left empty, so no input check will be made by the program.
+It is possible to download a .xlsx template file. It is so possible to fill the Excel file and upload it in the program. In this way it's possible to fill all the input values only one time.
+4.
+The user can display all the errors recognized by the program. In the header it's possible to see the errors and warnings number.
+Each error/warning is detailed with the sheet, the error/warning code, the row, the column name, the error/warning description.
+It is possible to copy the errors/warnings table and paste it into a new Excel file, to manage the data.
+It is also possible to change the file under analysis and do again the analysis with the same parameters, without repeating all the previous steps.
+"""
