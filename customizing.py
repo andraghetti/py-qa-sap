@@ -181,13 +181,10 @@ class Frame ():
         pack_or_grid: str = 'G',
         left_or_right: str = 'O',
         background: str = '#F0F8FF',
-        column: int = 0,
-        row: int = 0,
-        sticky: str = '',
-        col_span: int = 1,
-        row_span: int = 1
+        width: int = 0,
+        height: int = 0
     ):
-        self.frame = tkinter.Frame(root, background = background)
+        self.frame = tkinter.Frame(root, width = width, height = height, background = background)
         if pack_or_grid.upper() == 'P':
             if left_or_right.upper() == 'R':
                 self.frame.pack(fill = tkinter.BOTH, expand = tkinter.TRUE, side = 'right')
@@ -196,8 +193,7 @@ class Frame ():
             else:
                 self.frame.pack(fill = tkinter.BOTH, expand = tkinter.TRUE)
         else:
-            self.frame.grid(column = column, row = row, sticky = sticky, columnspan = col_span, rowspan = row_span)
-            self.frame.columnconfigure(0, weight=1)  # Ensure column 0 expands
+            self.frame.place(x = 0, y = 0)
 
 class Button ():
     def __init__ (
@@ -230,14 +226,29 @@ class Label ():
         weight = 'normal',
         justify = tkinter.LEFT,
         foreground: str = 'black',
+        background: str = '#F0F8FF',
         wraplength: int = 1000,
         x: int = 0,
         y: int = 0,
         anchor: str = 'nw',
         bordermode: str = 'inside'        
     ):
-        self.label = tkinter.Label(frame, text = text, font = ('Calibri', dimension, weight), justify = justify, background = '#F0F8FF', foreground = foreground, wraplength = wraplength)
+        self.label = tkinter.Label(frame, text = text, font = ('Calibri', dimension, weight), justify = justify, background = background, foreground = foreground, wraplength = wraplength)
         self.label.place (x = x, y = y, anchor = anchor, bordermode = bordermode)
+
+class SheetLabel ():
+    def __init__ (
+        self,
+        frame: None,
+        text: str = '',
+        dimension: int = 13,
+        weight = 'normal',
+        foreground: str = 'black',
+        background: str = '#F0F8FF',
+        relief: str = 'ridge'      
+    ):
+        self.label = tkinter.Label(frame, text = text, font = ('Calibri', dimension, weight), background = background, foreground = foreground, relief = relief, width = 30, anchor='nw')
+        self.text_input = tkinter.Text(frame, height = 150, width = 60, font=('Calibri', 13))
 
 class Entry ():
     def __init__ (
@@ -532,36 +543,35 @@ class ScrollableFrame(tkinter.Frame):
         tkinter.Frame.__init__(self, master, **kwargs)
 
         # Create a canvas and add it to the frame
-        self.canvas = tkinter.Canvas(self, borderwidth=0, highlightthickness=0, background = '#F0F8FF')
+        self.canvas = tkinter.Canvas(self, borderwidth=0, highlightthickness=0, background='#F0F8FF')
 
         # Create a frame inside the canvas to hold the widgets
-        self.inner_frame = tkinter.Frame(self.canvas, background = '#F0F8FF')
+        self.inner_frame = tkinter.Frame(self.canvas, background='#F0F8FF')
 
-        # Add a horizontal scrollbar and link it to the canvas
-        self.h_scrollbar = tkinter.Scrollbar(self, orient="horizontal", command=self.canvas.xview, background = '#F0F8FF')
-        self.canvas.configure(xscrollcommand=self.h_scrollbar.set)
+        # Add a vertical scrollbar and link it to the canvas
+        self.v_scrollbar = tkinter.Scrollbar(self, orient="vertical", command=self.canvas.yview, background='#F0F8FF')
+        self.canvas.configure(yscrollcommand=self.v_scrollbar.set)
 
         # Pack the canvas and scrollbar into the frame
-        self.canvas.pack(side="top", fill = tkinter.BOTH, expand = tkinter.TRUE)
-        self.h_scrollbar.pack(side="bottom", fill="x")
+        self.canvas.pack(side="left", fill=tkinter.BOTH, expand=tkinter.TRUE)
+        self.v_scrollbar.pack(side="right", fill="y")
 
         # Add the inner frame to the canvas
-        self.canvas.create_window((0, 0), window=self.inner_frame, anchor="nw", height=680, width = 4000)
+        self.canvas.create_window((0, 0), window=self.inner_frame, anchor="nw", width = 1300, height = 1800)
 
         # Configure the canvas to update the scroll region when the frame size changes
-        self.inner_frame.bind("<Configure>", self.on_inner_frame_configure)
+        self.inner_frame.bind("<Configure>", self.update_scroll_region)
 
         # Bind the canvas to respond to mousewheel events for scrolling
-        #self.canvas.bind_all("<MouseWheel>", self.on_mousewheel)
+        self.canvas.bind_all("<MouseWheel>", self.on_mousewheel)
 
-    def on_inner_frame_configure(self, event):
-        # Update the scroll region to encompass the inner frame
+    def update_scroll_region(self, event=None):
+        """Update the scroll region to encompass the inner frame."""
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
-    #def on_mousewheel(self, event):
-        # Handle mousewheel scrolling
-    #    if event.delta:
-    #        self.canvas.xview_scroll(int(-1 * (event.delta / 120)), "units")
+    def on_mousewheel(self, event):
+        """Scroll the canvas vertically using the mouse wheel."""
+        self.canvas.yview_scroll(-1 * (event.delta // 120), "units")
 
 class Sheet ():
     def __init__ (
@@ -574,56 +584,107 @@ class Sheet ():
         self.scrollable_frame = ScrollableFrame(self.main_frame.frame)
         self.scrollable_frame.pack(side = "top", fill = tkinter.BOTH, expand = tkinter.TRUE)
         self.frame_tab = self.scrollable_frame.inner_frame
-        self.field_1 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_2 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_3 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_4 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required') 
-        self.field_5 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_6 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_7 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_8 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_9 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_10 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_11 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_12 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_13 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_14 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_15 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_16 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_17 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_18 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_19 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_20 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_21 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_22 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_23 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_24 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_25 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_26 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_27 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_28 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_29 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required') 
-        self.field_30 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_31 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_32 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_33 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_34 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_35 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_36 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_37 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_38 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_39 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_40 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_41 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_42 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_43 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_44 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_45 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_46 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_47 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_48 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_49 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
-        self.field_50 = RadioButton_3 (self.frame_tab, text_1 = 'Mandatory', text_2 = 'Optional', text_3 = 'Not Required')
+
+        self.status = 'Migration Fields'
+
+        self.canvas_mandatory = tkinter.Canvas (self.frame_tab, width = 400, height = 4200, background='#CCFFCC')
+        self.canvas_mandatory.place (x = 0, y = 0)
+        self.canvas_optional = tkinter.Canvas (self.frame_tab, width = 400, height = 4200, background='#FFFFE0')
+        self.canvas_optional.place (x = 400, y = 0)
+        self.canvas_not_required = tkinter.Canvas (self.frame_tab, width = 400, height = 4200, background='#F0F8FF')
+        self.canvas_not_required.place (x = 800, y = 0)
+
+        self.mandatory_label = Label (self.frame_tab, text = 'Mandatory', weight='bold', background = '#CCFFCC', x = 200, y = 20, anchor='center')
+        self.optional_label = Label (self.frame_tab, text = 'Optional', weight='bold', background = '#FFFFE0', x = 600, y = 20, anchor='center')
+        self.not_required_label = Label (self.frame_tab, text = 'Not Required', weight='bold', x = 1000, y = 20, anchor='center')
+
+        self.present_fields_label = Label (self.frame_tab, text = 'Present Fields', weight='bold', background = '#DDEEFF', x = 200, y = 20, anchor='center')
+        self.input_values_label = Label (self.frame_tab, text = 'Input Values', weight='bold', background = '#F0F8FF', x = 650, y = 20, anchor='center')
+        self.present_fields_label.label.place_forget()
+        self.input_values_label.label.place_forget()
+
+
+        self.right = tkinter.PhotoImage(file='right.png')
+        self.left = tkinter.PhotoImage(file='left.png')
+        self.right_2 = tkinter.PhotoImage(file='right_2.png')
+        self.left_2 = tkinter.PhotoImage(file='left_2.png')
+
+        self.mandatory_right_but = tkinter.Button(self.main_frame.frame, text="",command = lambda: self.move_label('Optional'), image=self.right, compound=tkinter.LEFT, background = '#F0F8FF')
+        self.mandatory_right_but.place(x = 400, y = 300, anchor='center')
+        self.mandatory_left_but = tkinter.Button(self.main_frame.frame, text="",command = lambda: self.move_label('Mandatory'), image=self.left, compound=tkinter.LEFT, background = '#F0F8FF')
+        self.mandatory_left_but.place(x = 400, y = 350, anchor='center')
+        self.mandatory_right_2_but = tkinter.Button(self.main_frame.frame, text="",command = lambda: self.move_label('Not Required'), image=self.right_2, compound=tkinter.LEFT, background = '#F0F8FF')
+        self.mandatory_right_2_but.place(x = 400, y = 250, anchor='center')
+        self.mandatory_left_2_but = tkinter.Button(self.main_frame.frame, text="",command = lambda: self.move_label('Mandatory'), image=self.left_2, compound=tkinter.LEFT, background = '#F0F8FF')
+        self.mandatory_left_2_but.place(x = 400, y = 400, anchor='center')
+
+        self.not_required_right_but = tkinter.Button(self.main_frame.frame, text="",command = lambda: self.move_label('Not Required'), image=self.right, compound=tkinter.LEFT, background = '#F0F8FF')
+        self.not_required_right_but.place(x = 800, y = 300, anchor='center')
+        self.not_required_left_but = tkinter.Button(self.main_frame.frame, text="",command = lambda: self.move_label('Optional'), image=self.left, compound=tkinter.LEFT, background = '#F0F8FF')
+        self.not_required_left_but.place(x = 800, y = 350, anchor='center')
+        self.not_required_right_2_but = tkinter.Button(self.main_frame.frame, text="",command = lambda: self.move_label('Not Required'), image=self.right_2, compound=tkinter.LEFT, background = '#F0F8FF')
+        self.not_required_right_2_but.place(x = 800, y = 250, anchor='center')
+        self.not_required_left_2_but = tkinter.Button(self.main_frame.frame, text="",command = lambda: self.move_label('Mandatory'), image=self.left_2, compound=tkinter.LEFT, background = '#F0F8FF')
+        self.not_required_left_2_but.place(x = 800, y = 400, anchor='center')
+
+        self.but_list = [self.mandatory_right_but, self.mandatory_left_but, self.mandatory_right_2_but, self.mandatory_left_2_but, self.not_required_right_but, self.not_required_left_but, self.not_required_right_2_but, self.not_required_left_2_but] 
+
+        self.selected_label = None
+
+        self.mandatory_fields = []
+        self.optional_fields = []
+        self.not_required_fields = []
+
+        self.field_1 = SheetLabel (self.frame_tab)
+        self.field_2 = SheetLabel (self.frame_tab)
+        self.field_3 = SheetLabel (self.frame_tab)
+        self.field_4 = SheetLabel (self.frame_tab) 
+        self.field_5 = SheetLabel (self.frame_tab)
+        self.field_6 = SheetLabel (self.frame_tab)
+        self.field_7 = SheetLabel (self.frame_tab)
+        self.field_8 = SheetLabel (self.frame_tab)
+        self.field_9 = SheetLabel (self.frame_tab)
+        self.field_10 = SheetLabel (self.frame_tab)
+        self.field_11 = SheetLabel (self.frame_tab)
+        self.field_12 = SheetLabel (self.frame_tab)
+        self.field_13 = SheetLabel (self.frame_tab)
+        self.field_14 = SheetLabel (self.frame_tab)
+        self.field_15 = SheetLabel (self.frame_tab)
+        self.field_16 = SheetLabel (self.frame_tab)
+        self.field_17 = SheetLabel (self.frame_tab)
+        self.field_18 = SheetLabel (self.frame_tab)
+        self.field_19 = SheetLabel (self.frame_tab)
+        self.field_20 = SheetLabel (self.frame_tab)
+        self.field_21 = SheetLabel (self.frame_tab)
+        self.field_22 = SheetLabel (self.frame_tab)
+        self.field_23 = SheetLabel (self.frame_tab)
+        self.field_24 = SheetLabel (self.frame_tab)
+        self.field_25 = SheetLabel (self.frame_tab)
+        self.field_26 = SheetLabel (self.frame_tab)
+        self.field_27 = SheetLabel (self.frame_tab)
+        self.field_28 = SheetLabel (self.frame_tab)
+        self.field_29 = SheetLabel (self.frame_tab) 
+        self.field_30 = SheetLabel (self.frame_tab)
+        self.field_31 = SheetLabel (self.frame_tab)
+        self.field_32 = SheetLabel (self.frame_tab)
+        self.field_33 = SheetLabel (self.frame_tab)
+        self.field_34 = SheetLabel (self.frame_tab)
+        self.field_35 = SheetLabel (self.frame_tab)
+        self.field_36 = SheetLabel (self.frame_tab)
+        self.field_37 = SheetLabel (self.frame_tab)
+        self.field_38 = SheetLabel (self.frame_tab)
+        self.field_39 = SheetLabel (self.frame_tab)
+        self.field_40 = SheetLabel (self.frame_tab)
+        self.field_41 = SheetLabel (self.frame_tab)
+        self.field_42 = SheetLabel (self.frame_tab)
+        self.field_43 = SheetLabel (self.frame_tab)
+        self.field_44 = SheetLabel (self.frame_tab)
+        self.field_45 = SheetLabel (self.frame_tab)
+        self.field_46 = SheetLabel (self.frame_tab)
+        self.field_47 = SheetLabel (self.frame_tab)
+        self.field_48 = SheetLabel (self.frame_tab)
+        self.field_49 = SheetLabel (self.frame_tab)
+        self.field_50 = SheetLabel (self.frame_tab)
 
         self.field_list = [self.field_1, self.field_2, self.field_3, self.field_4, self.field_5, self.field_6, self.field_7, self.field_8, self.field_9, self.field_10,
                            self.field_11, self.field_12, self.field_13, self.field_14, self.field_15, self.field_16, self.field_17, self.field_18, self.field_19, self.field_20,
@@ -631,6 +692,66 @@ class Sheet ():
                            self.field_31, self.field_32, self.field_33, self.field_34, self.field_35, self.field_36, self.field_37, self.field_38, self.field_39, self.field_40,
                            self.field_41, self.field_42, self.field_43, self.field_44, self.field_45, self.field_46, self.field_47, self.field_48, self.field_49, self.field_50]
 
+        for lab in self.field_list:
+            lab.label.bind("<Button-1>", self.on_label_click)  # Bind left-click event
+
+    def on_label_click(self, event):
+        # Deselect the previously selected label
+        if self.selected_label:
+            if self.selected_label in self.mandatory_fields:
+                self.selected_label.config(bg="#CCFFCC")
+            elif self.selected_label in self.optional_fields:
+                self.selected_label.config(bg="#FFFFE0")
+            else:
+                self.selected_label.config(bg="#F0F8FF")
+        
+        if self.status == 'Migration Input':
+            for txt in self.field_list:
+                if self.selected_label == txt.label:
+                    txt.text_input.place_forget()
+
+        # Select the new label
+        self.selected_label = event.widget
+        self.selected_label.config(bg="pink")
+
+        if self.status == 'Migration Input':
+            for txt in self.field_list:
+                if self.selected_label == txt.label:
+                    txt.text_input.place (x = 400, y = 50)
+    
+    def move_label (self, recipient: str):
+        if self.selected_label.winfo_x() < 400:
+            self.mandatory_fields.remove(self.selected_label)
+        elif 400 < self.selected_label.winfo_x() < 800:
+            self.optional_fields.remove(self.selected_label)
+        else:
+            self.not_required_fields.remove(self.selected_label)
+        
+        if recipient == 'Mandatory':
+            self.mandatory_fields.append(self.selected_label)
+        elif recipient == 'Optional':
+            self.optional_fields.append(self.selected_label)
+        else:
+            self.not_required_fields.append(self.selected_label)
+        
+        mandatory_y = 50
+        optional_y = 50
+        not_required_y = 50
+        for man in self.mandatory_fields:
+            man.place_forget()
+            man.place (x = 40, y = mandatory_y)
+            man.config(background='#CCFFCC')
+            mandatory_y += 30
+        for opt in self.optional_fields:
+            opt.place_forget()
+            opt.place (x = 440, y = optional_y)
+            opt.config(background='#FFFFE0')
+            optional_y += 30
+        for nre in self.not_required_fields:
+            nre.place_forget()
+            nre.place (x = 840, y = not_required_y)
+            nre.config(background='#F0F8FF')
+            not_required_y += 30
 
 
 

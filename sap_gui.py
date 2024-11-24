@@ -79,9 +79,9 @@ def read_file_xlsx(entry_path_str: str):
     with open(file_path, 'r') as file:
         content = pd.read_excel(file_path)
 
-def create_excel_file(sheet_names_list: list, present_fields: list):
+def create_excel_file(sheet_names_list: list, present_fields: list, mode: str):
     # Ask the user to choose where to save the file
-    file_path = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")])
+    file_path = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")], initialfile = f"{mode}_input_template.xlsx")
 
     if file_path:
         # Create a Pandas Excel writer using xlsxwriter as the engine
@@ -123,16 +123,24 @@ def create_excel_file(sheet_names_list: list, present_fields: list):
 
         print(f"Excel file saved to: {file_path}")
 
-def migration_forget (sheet_list: list, sheet: str):
+def migration_forget (sheet_list: list, sheet: str = ''):
     for a in sheet_list:
-        if sheet != 'No':
+        if sheet == 'Start':
             a.sheet.checkbox.place_forget() 
+        elif sheet == 'Migration Input':
+            a.canvas_mandatory.config(background = '#DDEEFF')
+            a.canvas_optional.place_forget()
+            a.canvas_not_required.place_forget()
+            a.mandatory_label.label.place_forget()
+            a.optional_label.label.place_forget()
+            a.not_required_label.label.place_forget()
+            a.present_fields_label.label.place(x = 200, y = 20, anchor='center')
+            a.input_values_label.label.place(x = 650, y = 20, anchor='center')
+            for c in a.but_list:
+                c.place_forget()
         a.main_frame.frame.pack_forget()
         for b in a.field_list:
-            b.label.label.place_forget()
-            b.radiobutton_1.place_forget()
-            b.radiobutton_2.place_forget()
-            b.radiobutton_3.place_forget() 
+            b.label.place_forget()
 
 def info (type: str):
     Info (type = type)
@@ -570,7 +578,7 @@ class MigrationFile:
 
         self.sheet_list = [self.sheet_1, self.sheet_2, self.sheet_3, self.sheet_4, self.sheet_5, self.sheet_6, self.sheet_7, self.sheet_8, self.sheet_9, self.sheet_10, self.sheet_11, self.sheet_12, self.sheet_13, self.sheet_14, self.sheet_15, self.sheet_16, self.sheet_17, self.sheet_18, self.sheet_19, self.sheet_20, self.sheet_21, self.sheet_22, self.sheet_23, self.sheet_24, self.sheet_25, self.sheet_26, self.sheet_27, self.sheet_28, self.sheet_29, self.sheet_30]
         
-        migration_forget (self.sheet_list, 'Yes')
+        migration_forget (self.sheet_list, 'Start')
 
         # Configure the window to accept file drops
         mainroot.root.drop_target_register(DND_FILES)
@@ -676,7 +684,7 @@ class MigrationFile:
                 self.asset_migration_date.entry.insert(0, self.calendar.get_date())
                 self.asset_migration_date.entry.config(state = 'disabled')
 
-        migration_forget(self.sheet_list, 'Yes')
+        migration_forget(self.sheet_list, 'Start')
             
         xl = pd.ExcelFile(self.entry_path.entry.get())
 
@@ -734,7 +742,7 @@ class MigrationFile:
         self.entry_path.entry.config(state = 'disabled')
     
     def migration_fields (self):
-        migration_forget(self.sheet_list, 'No')
+        migration_forget(self.sheet_list, '')
         self.mode_frame.place_forget()
         self.sheet_names_list = []
         
@@ -824,30 +832,28 @@ class MigrationFile:
                 if len(column_names) > 50:
                     maximum_field = 50
 
-                column = 5
-                new_line = 0
+                mandatory_y = 50
+                optional_y = 50
+                not_required_y = 50
                 for a in range(maximum_field):
-                    if a == 8 or a == 16 or a == 24 or a == 32 or a == 40 or a == 48:
-                        new_line += 100
-                        column = 5
                     label_text = column_names[a][0].replace("*", "").replace("+", "")
-                    if len(column_names[a][0]) > 25:
-                        label_text = column_names[a][0][:25]
-                    self.sheet_list[b].field_list[a].label.label.config(text = label_text)
-                    self.sheet_list[b].field_list[a].label_text = column_names[a][0]
-                    self.sheet_list[b].field_list[a].label.label.place(x = column, y = new_line)
-                    self.sheet_list[b].field_list[a].radiobutton_1.place(x = column, y = new_line + 20)
-                    self.sheet_list[b].field_list[a].radiobutton_2.place(x = column, y = new_line + 40)
-                    self.sheet_list[b].field_list[a].radiobutton_3.place(x = column, y = new_line + 60)
+                    if len(column_names[a][0]) > 50:
+                        label_text = column_names[a][0][:50]
+                    self.sheet_list[b].field_list[a].label.config(text = label_text)
                     if "*" in column_names[a][0] or column_names[a][1] == 'FF92D050':
-                        self.sheet_list[b].field_list[a].variable.set('Mandatory') #to have a default for mandatory fields
-                        self.sheet_list[b].field_list[a].radiobutton_1.config (background = '#ADFF2F')
+                        self.sheet_list[b].field_list[a].label.place (x = 40, y = mandatory_y)
+                        self.sheet_list[b].field_list[a].label.config(background='#CCFFCC')
+                        self.sheet_list[b].mandatory_fields.append(self.sheet_list[b].field_list[a].label)
+                        mandatory_y += 30
                     elif "+" in column_names[a][0] or column_names[a][1] == 'FFFFFF00':
-                        self.sheet_list[b].field_list[a].variable.set('Optional') #to have a default for optional fields
-                        self.sheet_list[b].field_list[a].radiobutton_2.config (background = '#FFFF66')
+                        self.sheet_list[b].field_list[a].label.place (x = 440, y = optional_y)
+                        self.sheet_list[b].field_list[a].label.config(background='#FFFFE0')
+                        self.sheet_list[b].optional_fields.append(self.sheet_list[b].field_list[a].label)
+                        optional_y += 30
                     else:
-                        self.sheet_list[b].field_list[a].variable.set('Not Required')
-                    column += 200
+                        self.sheet_list[b].field_list[a].label.place (x = 840, y = not_required_y)
+                        self.sheet_list[b].not_required_fields.append(self.sheet_list[b].field_list[a].label)
+                        not_required_y += 30
                 
                 self.sh_list.append(self.sheet_names[b])
                 self.sheet_names_list.append((self.sheet_names[b], b)) #a list with only the sheets to be considered in the analysis
@@ -897,11 +903,12 @@ class MigrationFile:
     
     def migration_input (self, repeat: str = 'No'):
         if repeat == 'No':
-            migration_forget(self.sheet_list, 'No')
+            migration_forget(self.sheet_list, 'Migration Input')
         self.present_fields = []
         self.error_list = []
 
         for a in self.sheet_names_list:
+            self.sheet_list[a[1]].status = 'Migration Input'
             
             df = pd.read_excel(self.file_path, a[0])
 
@@ -970,38 +977,36 @@ class MigrationFile:
                                     self.error_list.append((a[0], 'W001', row + 2 , column_list[n].split('\n')[0].replace("*", "").replace("+", ""), 'This field is not blank, but is in a column not considered in this analysis'))
 
             #checks for mandatory fields (are they filled?) and for not required fields (are they all blank?)
-            c = 0
+            field_y = 50
             for b in range(maximum_field):
                 rows = df.iloc[:, column_names[b][1]].tolist()
-                if self.sheet_list[a[1]].field_list[b].variable.get() == 'Mandatory':
-                    self.present_fields.append((a[0], self.sheet_list[a[1]].field_list[b].label_text, column_names[b][1], b, column_tech_names[column_names[b][1]])) #in this list only fields mandatory and optional will be included
+                if self.sheet_list[a[1]].field_list[b].label in self.sheet_list[a[1]].mandatory_fields:
+                    self.present_fields.append((a[0], self.sheet_list[a[1]].field_list[b].label.cget('text'), column_names[b][1], b, column_tech_names[column_names[b][1]])) #in this list only fields mandatory and optional will be included
                     if repeat == 'No':
-                        self.sheet_list[a[1]].field_list[b].label.label.place(x = 5 + 170*c, y = 10)
-                        self.sheet_list[a[1]].field_list[b].text_input.place(x = 5 + 170*c, y = 50)
+                        self.sheet_list[a[1]].field_list[b].label.place(x = 40, y = field_y)
                     for row in range(len(rows)):
                         if row >= 7:
                             if str(rows[row]) == 'nan' and type(rows[row]) == float:
-                                self.error_list.append((a[0], 'E001', row + 2 , self.sheet_list[a[1]].field_list[b].label_text.replace("*", "").replace("+", ""), 'This mandatory field is blank'))
-                    c+=1
+                                self.error_list.append((a[0], 'E001', row + 2 , self.sheet_list[a[1]].field_list[b].label.cget('text').replace("*", "").replace("+", ""), 'This mandatory field is blank'))
+                    field_y += 30
 
-                elif self.sheet_list[a[1]].field_list[b].variable.get() == 'Optional':
-                    self.present_fields.append((a[0], self.sheet_list[a[1]].field_list[b].label_text, column_names[b][1], b, column_tech_names[column_names[b][1]]))
+                elif self.sheet_list[a[1]].field_list[b].label in self.sheet_list[a[1]].optional_fields:
+                    self.present_fields.append((a[0], self.sheet_list[a[1]].field_list[b].label.cget('text'), column_names[b][1], b, column_tech_names[column_names[b][1]]))
                     if repeat == 'No':
-                        self.sheet_list[a[1]].field_list[b].label.label.place(x = 5 + 170*c, y = 10)
-                        self.sheet_list[a[1]].field_list[b].text_input.place(x = 5 + 170*c, y = 50)
-                    c+=1
+                        self.sheet_list[a[1]].field_list[b].label.place(x = 40, y = field_y)
+                    field_y += 30
                 
                 else:
                     for row in range(len(rows)):
                         if row >= 7:
                             if str(rows[row]) != 'nan' or type(rows[row]) != float:
-                                self.error_list.append((a[0], 'E002', row + 2 , self.sheet_list[a[1]].field_list[b].label_text.replace("*", "").replace("+", ""), 'This not required field is filled'))
+                                self.error_list.append((a[0], 'E002', row + 2 , self.sheet_list[a[1]].field_list[b].label.cget('text').replace("*", "").replace("+", ""), 'This not required field is filled'))
 
 
         if repeat == 'No':
             self.tab.select(0) #in this way the first tab is selected by default
 
-            self.download_input_button.button.config (command = lambda: create_excel_file (self.sheet_names_list, self.present_fields))
+            self.download_input_button.button.config (command = lambda: create_excel_file (self.sheet_names_list, self.present_fields, self.mode.variable.get()))
             self.upload_input_button.button.config (command = lambda: (browse_file_xlsx(self.upload_input_entry), read_file_xlsx(self.upload_input_entry.entry.get()), self.upload_input_file()))
             self.download_input_button.button.place(x = 800, y = 10)
             self.upload_input_button.button.place(x = 1000, y = 10)
@@ -1137,62 +1142,62 @@ class MigrationFile:
                         #format and length controls
                         if column_formats[b[0]] == 'D': #date
                             if not isinstance(rows[row], datetime): # It recognizes both the SAP custom date format and the Excel date format
-                                self.error_list.append((a[0], 'E003', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), f'This date is in a wrong format. Insert it using DD/MM/YYYY -> {str(rows[row])}'))
+                                self.error_list.append((a[0], 'E003', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label.cget('text').replace("*", "").replace("+", ""), f'This date is in a wrong format. Insert it using DD/MM/YYYY -> {str(rows[row])}'))
 
                         elif column_formats[b[0]] == 'N': #integer number
                             if not isinstance(rows[row], int):
-                                self.error_list.append((a[0], 'E004', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), f'This number is in a wrong format. Insert it using NNNN -> {str(rows[row])}'))
+                                self.error_list.append((a[0], 'E004', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label.cget('text').replace("*", "").replace("+", ""), f'This number is in a wrong format. Insert it using NNNN -> {str(rows[row])}'))
                             elif rows[row] > 10**int(column_int[b[0]]):
-                                self.error_list.append((a[0], 'E005', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), f'The maximum length of the field is exceeded -> {len(str(rows[row]))} > {int(column_int[b[0]])}'))
+                                self.error_list.append((a[0], 'E005', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label.cget('text').replace("*", "").replace("+", ""), f'The maximum length of the field is exceeded -> {len(str(rows[row]))} > {int(column_int[b[0]])}'))
 
                         elif column_formats[b[0]] == 'P': #integer or rational number
                             if not isinstance(rows[row], int) and not isinstance(rows[row], float):
-                                self.error_list.append((a[0], 'E004', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), f'This number is in a wrong format. Insert it using NNNN.NN -> {str(rows[row])}'))
+                                self.error_list.append((a[0], 'E004', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label.cget('text').replace("*", "").replace("+", ""), f'This number is in a wrong format. Insert it using NNNN.NN -> {str(rows[row])}'))
                             elif isinstance(rows[row], int):
                                 if rows[row] > 10**int(column_int[b[0]]):
-                                    self.error_list.append((a[0], 'E005', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), f'The maximum length of the field is exceeded -> {len(str(rows[row]))} > {int(column_int[b[0]])}'))
+                                    self.error_list.append((a[0], 'E005', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label.cget('text').replace("*", "").replace("+", ""), f'The maximum length of the field is exceeded -> {len(str(rows[row]))} > {int(column_int[b[0]])}'))
                                 if rows[3] in ['WRBTR', 'DMBTR', 'DMBE2']:
                                     if len(str(rows[row]).split('.')[0].replace("-","")) > 11:
-                                        self.error_list.append((a[0], 'W010', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), 'The amount is over 100 billion. Check FLETS t-code to see if the amount field is extended'))
+                                        self.error_list.append((a[0], 'W010', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label.cget('text').replace("*", "").replace("+", ""), 'The amount is over 100 billion. Check FLETS t-code to see if the amount field is extended'))
                                     elif str(rows[row]).split('.')[0] == '0':
-                                        self.error_list.append((a[0], 'W011', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), 'The amount is zero. Check the value'))
+                                        self.error_list.append((a[0], 'W011', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label.cget('text').replace("*", "").replace("+", ""), 'The amount is zero. Check the value'))
                             else:
                                 if len(str(rows[row]).split('.')[0]) > int(column_int[b[0]]):
-                                    self.error_list.append((a[0], 'E005', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), f"The maximum length of the field is exceeded (integer) -> {len(str(rows[row]).split('.')[0])} > {int(column_int[b[0]])}"))
+                                    self.error_list.append((a[0], 'E005', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label.cget('text').replace("*", "").replace("+", ""), f"The maximum length of the field is exceeded (integer) -> {len(str(rows[row]).split('.')[0])} > {int(column_int[b[0]])}"))
                                 if len(str(rows[row]).split('.')[1]) > int(column_dec[b[0]]):
-                                    self.error_list.append((a[0], 'E005', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), f"The maximum length of the field is exceeded (decimals) -> {len(str(rows[row]).split('.')[1])} > {int(column_dec[b[0]])}"))
+                                    self.error_list.append((a[0], 'E005', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label.cget('text').replace("*", "").replace("+", ""), f"The maximum length of the field is exceeded (decimals) -> {len(str(rows[row]).split('.')[1])} > {int(column_dec[b[0]])}"))
                                 
                                 if rows[3] in ['WRBTR', 'DMBTR', 'DMBE2']:
                                     if len(str(rows[row]).split('.')[0].replace("-","")) > 11:
-                                        self.error_list.append((a[0], 'W010', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), 'The amount is over 100 billion. Check FLETS t-code to see if the amount field is extended'))
+                                        self.error_list.append((a[0], 'W010', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label.cget('text').replace("*", "").replace("+", ""), 'The amount is over 100 billion. Check FLETS t-code to see if the amount field is extended'))
 
                         else: #char type
                             if len(str(rows[row])) > int(column_int[b[0]]): #check for maximum length exceeded
-                                self.error_list.append((a[0], 'E005', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), 'The maximum length of the field is exceeded'))
+                                self.error_list.append((a[0], 'E005', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label.cget('text').replace("*", "").replace("+", ""), F'The maximum length of the field is exceeded -> {len(str(rows[row]))} > {int(column_int[b[0]])}'))
 
                             if rows[3] in customizing.migration_file_space_forbidden_fields and (' ' in str(rows[row]) or '\xa0' in str(rows[row])): #check for blank space present in some fields
-                                self.error_list.append((a[0], 'E010', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), 'The space in this field is forbidden'))
+                                self.error_list.append((a[0], 'E010', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label.cget('text').replace("*", "").replace("+", ""), 'The space in this field is forbidden'))
                             
                             if rows[3] == 'SMTP_ADDR' and '@' not in rows[row]: #check for "@" present in email fields
-                                self.error_list.append((a[0], 'E011', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), 'In this field the "@" is mandatory'))
+                                self.error_list.append((a[0], 'E011', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label.cget('text').replace("*", "").replace("+", ""), 'In this field the "@" is mandatory'))
 
-                            if '\n' in rows[row]:
-                                self.error_list.append((a[0], 'E031', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), 'In this field go to the next line is forbidden'))
+                            if '\n' in str(rows[row]):
+                                self.error_list.append((a[0], 'E031', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label.cget('text').replace("*", "").replace("+", ""), 'In this field go to the next line is forbidden'))
 
                             #specific checks for modes
                             if self.mode.variable.get() in ['Customer', 'Customer - extend existing record by new org levels']:
                                 if rows[3] == 'PARVW' and str(rows[row]) not in customizing.mf_partner_function_customer:
-                                    self.error_list.append((a[0], 'E012', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), 'In this field the standard acceptable values are "AG", "RE", "RG", "WE" and "ZM"'))
+                                    self.error_list.append((a[0], 'E012', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label.cget('text').replace("*", "").replace("+", ""), 'In this field the standard acceptable values are "AG", "RE", "RG", "WE" and "ZM"'))
                             
                             elif self.mode.variable.get() in ['Supplier', 'Supplier - extend existing record by new org levels']:
                                 if rows[3] == 'PARVW' and str(rows[row]) not in customizing.mf_partner_function_supplier:
-                                    self.error_list.append((a[0], 'E012', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), 'In this field the standard acceptable values are "LF", "WL", "BA", "RS" and "ZM"'))
+                                    self.error_list.append((a[0], 'E012', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label.cget('text').replace("*", "").replace("+", ""), 'In this field the standard acceptable values are "LF", "WL", "BA", "RS" and "ZM"'))
                                 if (rows[3] == 'WT_SUBJCT' or rows[3] == 'WEBRE') and str(rows[row]) != 'X':
-                                    self.error_list.append((a[0], 'E012', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), 'In this field the standard acceptable value is "X"'))
+                                    self.error_list.append((a[0], 'E012', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label.cget('text').replace("*", "").replace("+", ""), 'In this field the standard acceptable value is "X"'))
 
                             elif self.mode.variable.get() == 'FI - Accounts receivable open item' or self.mode.variable.get() == 'FI - Accounts payable open item':
                                 if rows[3] == 'ZLSPR'  and str(rows[row]) != 'X':
-                                    self.error_list.append((a[0], 'E012', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), 'In this field the standard acceptable value is "X"'))
+                                    self.error_list.append((a[0], 'E012', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label.cget('text').replace("*", "").replace("+", ""), 'In this field the standard acceptable value is "X"'))
 
                         #to track all the key fields information
                         if b[1] < key_counter:
@@ -1200,7 +1205,7 @@ class MigrationFile:
 
                         if not all(element == '' for element in input_content): #check for input fields (blank is always considered)
                             if str(rows[row]) not in input_content:
-                                self.error_list.append((a[0], 'E007', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), f'Field filled with a value not foreseen among input fields -> {str(rows[row])}'))                        
+                                self.error_list.append((a[0], 'E007', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label.cget('text').replace("*", "").replace("+", ""), f'Field filled with a value not foreseen among input fields -> {str(rows[row])}'))                        
 
                     if row >= 7:
                         if a[0] == 'General Data':
@@ -1256,7 +1261,7 @@ class MigrationFile:
                             if a[0] == 'Posting Information':
                                 if rows[3] == 'AKTIV':
                                     if rows[row] > datetime.strptime(self.asset_migration_date.entry.get(), "%d/%m/%Y"):
-                                        self.error_list.append((a[0], 'E024', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), f"The date must be prior to the migration date ({self.asset_migration_date.entry.get()})")) 
+                                        self.error_list.append((a[0], 'E024', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label.cget('text').replace("*", "").replace("+", ""), f"The date must be prior to the migration date ({self.asset_migration_date.entry.get()})")) 
 
                                     elif rows[row].year == datetime.strptime(self.asset_migration_date.entry.get(), "%d/%m/%Y").year and not (datetime.strptime(self.asset_migration_date.entry.get(), "%d/%m/%Y").day == 31 and datetime.strptime(self.asset_migration_date.entry.get(), "%d/%m/%Y").month == 12):
                                         asset_in_current_year.append((df.iloc[row, 0], df.iloc[row, 1], df.iloc[row, 2]))
@@ -1270,15 +1275,15 @@ class MigrationFile:
                                     for asset in asset_cumulative_values:
                                         if row == asset[1]:
                                             if (float(asset[0]) > 0 and rows[row] > 0) or (float(asset[0]) < 0 and rows[row] < 0):
-                                                self.error_list.append((a[0], 'E022', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), "Cumulative Acq. Values and Acc. Ordinary Depreciation must have different sign")) 
+                                                self.error_list.append((a[0], 'E022', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label.cget('text').replace("*", "").replace("+", ""), "Cumulative Acq. Values and Acc. Ordinary Depreciation must have different sign")) 
                                             else:
                                                 if abs(rows[row]) > abs(float(asset[0])):
-                                                    self.error_list.append((a[0], 'E023', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), "Acc. Ordinary Depreciation can not be greater than Cumulative Acq. Values (in absolute value)"))                    
+                                                    self.error_list.append((a[0], 'E023', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label.cget('text').replace("*", "").replace("+", ""), "Acc. Ordinary Depreciation can not be greater than Cumulative Acq. Values (in absolute value)"))                    
 
                             if a[0] in ['Cumulative Values', 'Posted Values', 'Transactions (Transf. dur. FY)']:
                                 if rows[3] == 'GJAHR':
                                     if rows[row] != datetime.strptime(self.asset_migration_date.entry.get(), "%d/%m/%Y").year:
-                                        self.error_list.append((a[0], 'E029', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), "Current fiscal year must be aligned to migration year"))                    
+                                        self.error_list.append((a[0], 'E029', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label.cget('text').replace("*", "").replace("+", ""), "Current fiscal year must be aligned to migration year"))                    
 
                             if a[0] == 'Transactions (Transf. dur. FY)':
                                 if rows [3]== 'ASSETTRTYP':
@@ -1287,9 +1292,9 @@ class MigrationFile:
                                     asset_trans_amount.append (str(rows[row]))
                                 elif rows[3] == 'VALUEDATE' and str(rows[row]) != 'nan':
                                     if rows[row] > datetime.strptime(self.asset_migration_date.entry.get(), "%d/%m/%Y"):
-                                        self.error_list.append((a[0], 'E024', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), "The date must be prior to the migration date"))
+                                        self.error_list.append((a[0], 'E024', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label.cget('text').replace("*", "").replace("+", ""), "The date must be prior to the migration date"))
                                     if rows[row].year != datetime.strptime(self.asset_migration_date.entry.get(), "%d/%m/%Y").year:
-                                        self.error_list.append((a[0], 'E030', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label_text.replace("*", "").replace("+", ""), "The Reference Date must be in the current year"))  
+                                        self.error_list.append((a[0], 'E030', row + 2 , self.sheet_list[a[1]].field_list[b[1]].label.cget('text').replace("*", "").replace("+", ""), "The Reference Date must be in the current year"))  
 
                         elif self.mode.variable.get() in ['FI - Accounts receivable open item', 'FI - Accounts payable open item', 'FI - G/L account balance and open/line item']:
                             if rows[3] == 'WAERS':
@@ -1491,7 +1496,7 @@ class MigrationFile:
         for widget in self.frame.winfo_children():
             widget.destroy()   
 
-        lst = [('SHEET', 'MESSAGE ID', 'ROW', 'FIELD', 'ERROR MESSAGE')]
+        lst = []
         errors_number = 0
         warnings_number = 0
         for a in range(len(self.error_list)):
@@ -1503,10 +1508,18 @@ class MigrationFile:
 
         tree = customizing.Treeview (
             frame = self.frame,
-            col_text = ['', '', '', '', ''],
+            col_text = ['SHEET', 'MESSAGE ID', 'ROW', 'FIELD', 'ERROR MESSAGE'],
             width_list = [120, 30, 30, 120, 540],
             lst = lst
         )
+
+        excel = customizing.Button (
+                frame = self.frame,
+                text = 'Export to Excel',
+                command = lambda: tree.export_to_excel (file_path = self.file_path, file_name = "Migration File Errors"),
+                x = 250,
+                y = 10
+            )
 
         image_error_path = 'red_cross.png'
         image_warning_path = 'yellow_triangle.png'
